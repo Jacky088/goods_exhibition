@@ -12,7 +12,7 @@ if (!defined('WPINC')) {
 function goods_exhibition_register_shortcode() {
     add_shortcode('goods_exhibition', 'goods_exhibition_shortcode_callback');
 }
-add_action('init', 'goods_exhibition_register_shortcode');
+add_action('init'， 'goods_exhibition_register_shortcode');
 
 function goods_exhibition_shortcode_callback($atts) {
     // 默认不限制数量，获取所有产品
