@@ -1,0 +1,76 @@
+/**
+ * 好物页面插件管理界面样式
+ */
+
+/* 产品表单样式 */
+.goods-exhibition-admin-form {
+    max-width: 800px;
+}
+
+/* 图片预览容器 */
+.product-image-preview {
+    margin-bottom: 15px;
+}
+
+.product-image-preview img {
+    border: 1px solid #ddd;
+    padding: 5px;
+    background: #fff;
+    max-width: 200px;
+    max-height: 200px;
+}
+
+/* 表单字段样式 */
+.form-table th {
+    width: 150px;
+}
+
+/* 媒体上传按钮 */
+#upload_image_button {
+    margin-right: 10px;
+}
+
+/* 文件上传字段 */
+input[type="file"] {
+    margin: 10px 0;
+}
+
+/* 产品列表表格 */
+.wp-list-table .column-image {
+    width: 120px;
+}
+
+.wp-list-table img {
+    max-width: 100px;
+    max-height: 100px;
+    border: 1px solid #ddd;
+    padding: 2px;
+    background: #fff;
+}
+
+/* 操作按钮 */
+.wp-list-table .button-small {
+    margin-right: 5px;
+}
+
+/* 提示信息 */
+.description {
+    margin: 5px 0;
+    color: #666;
+}
+
+/* 删除按钮 */
+.button-link-delete {
+    color: #a00;
+}
+
+.button-link-delete:hover {
+    color: #dc3232;
+}
+
+/* 响应式调整 */
+@media screen and (max-width: 782px) {
+    .form-table th {
+        width: auto;
+    }
+}

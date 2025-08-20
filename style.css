@@ -1,0 +1,197 @@
+/**
+ * 好物页面插件前端样式
+ */
+
+/* 分类标题居中，自适应布局 */
+.goods-exhibition-category-title {
+    width: 100%;
+    max-width: 800px; /* 最大宽度，根据需要调整 */
+    margin: 40px auto 20px;
+    font-weight: 700;
+    font-size: 1.8rem;
+    text-align: center;
+    word-break: break-word;
+    box-sizing: border-box;
+    padding: 0 15px;
+}
+
+/* 响应式调整：小屏幕字体和间距缩小 */
+@media (max-width: 600px) {
+    .goods-exhibition-category-title {
+        font-size: 1.4rem;
+        margin: 30px auto 15px;
+    }
+}
+
+/* 全局盒模型 */
+.goods-exhibition-container,
+.goods-exhibition-container * {
+    box-sizing: border-box;
+}
+
+/* 外层滑动容器和箭头：整体最大宽度及苹果风设计 */
+.goods-exhibition-wrapper {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 40px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    background-color: #fdfdfd;
+    border-radius: 24px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.07);
+}
+
+/* 横向滑动条容器 - 隐藏滚动条 */
+.goods-exhibition-slider {
+    display: flex;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding-bottom: 8px;
+    scrollbar-width: none; /* Firefox */
+}
+.goods-exhibition-slider::-webkit-scrollbar {
+    display: none; /* Chrome Safari */
+}
+
+/* 商品卡片 */
+/* 重点修改：一屏3个，宽度增大更美观 */
+.goods-exhibition-item {
+    flex: 0 0 33.3333%; /* 一屏显示三个 */
+    margin: 0 12px;
+    min-width: 280px;
+    max-width: 360px;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 14px 20px rgba(0, 0, 0, 0.06);
+    cursor: default;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    text-align: left;
+}
+.goods-exhibition-item.has-link {
+    cursor: pointer;
+}
+.goods-exhibition-item:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 24px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* 文字内容 */
+.goods-exhibition-content {
+    padding: 20px 20px 8px 20px;
+    flex-grow: 1;
+}
+
+.goods-exhibition-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    letter-spacing: -0.03em;
+    color: #000;
+}
+
+.goods-exhibition-description {
+    font-size: 14px;
+    line-height: 1.4;
+    color: #444;
+    margin-bottom: 8px;
+}
+
+.goods-exhibition-price {
+    font-weight: 600;
+    font-size: 16px;
+    color: #666;
+}
+
+/* 图片容器和图片 */
+.goods-exhibition-image-container {
+    padding: 0 20px 20px 20px;
+    flex-shrink: 0;
+}
+
+.goods-exhibition-image {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    border-radius: 16px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    user-select: none;
+}
+
+/* 箭头按钮 */
+.goods-exhibition-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    color: #666;
+    font-size: 24px;
+    line-height: 1;
+    transition: background 0.3s ease, color 0.3s ease;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.goods-exhibition-arrow:hover {
+    background: #e5e5e7;
+    color: #000;
+}
+.goods-exhibition-arrow:focus {
+    outline: none;
+    box-shadow: 0 0 4px 2px rgba(0, 0, 0, 0.25);
+}
+
+.goods-exhibition-arrow-left {
+    left: 0;
+}
+.goods-exhibition-arrow-right {
+    right: 0;
+}
+
+/* 空状态 */
+.goods-exhibition-empty {
+    text-align: center;
+    padding: 30px;
+    font-size: 14px;
+    color: #86868b;
+}
+
+/* 移动端响应式 */
+@media (max-width: 1024px) {
+    .goods-exhibition-item {
+        flex: 0 0 50%; /* 中屏显示2个 */
+        min-width: 220px;
+        max-width: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .goods-exhibition-wrapper {
+        padding: 20px 10px;
+    }
+    .goods-exhibition-item {
+        flex: 0 0 100%; /* 小屏一列 */
+        min-width: 100%;
+        margin: 0 0 20px 0;
+    }
+    .goods-exhibition-arrow {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .goods-exhibition-arrow {
+        display: none; /* 手机端隐藏箭头 */
+    }
+}
