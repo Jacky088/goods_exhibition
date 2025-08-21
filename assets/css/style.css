@@ -54,7 +54,7 @@
 }
 
 /* 商品卡片 */
-/* 重点修改：一屏3个，宽度增大更美观 */
+/* 默认：一屏3个 */
 .goods-exhibition-item {
     flex: 0 0 33.3333%; /* 一屏显示三个 */
     margin: 0 12px;
@@ -69,10 +69,21 @@
     justify-content: space-between;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     text-align: left;
+    text-decoration: none;
+    color: inherit;
 }
+/* 有链接的商品容器用a包裹，需要设置为块元素和指针样式 */
 .goods-exhibition-item.has-link {
     cursor: pointer;
+    display: block;
+    text-decoration: none;
+    color: inherit;
 }
+.goods-exhibition-item.has-link:hover,
+.goods-exhibition-item.has-link:focus {
+    text-decoration: none;
+}
+/* 悬浮动画 */
 .goods-exhibition-item:hover {
     transform: translateY(-6px);
     box-shadow: 0 24px 30px rgba(0, 0, 0, 0.12);
@@ -165,32 +176,27 @@
     color: #86868b;
 }
 
-/* 移动端响应式 */
-@media (max-width: 1024px) {
+/* 平板端: 显示2个商品 */
+@media (max-width: 1024px) and (min-width: 481px) {
     .goods-exhibition-item {
-        flex: 0 0 50%; /* 中屏显示2个 */
-        min-width: 220px;
+        flex: 0 0 50%; /* 显示2个 */
+        min-width: auto;
         max-width: none;
+        margin: 0 12px;
     }
 }
 
-@media (max-width: 768px) {
+/* 手机端: 显示1.5个商品 */
+@media (max-width: 480px) {
     .goods-exhibition-wrapper {
         padding: 20px 10px;
     }
     .goods-exhibition-item {
-        flex: 0 0 100%; /* 小屏一列 */
-        min-width: 100%;
-        margin: 0 0 20px 0;
+        flex: 0 0 66.6667%; /* 约2/3屏宽，显示1.5个 */
+        min-width: auto;
+        max-width: none;
+        margin: 0 8px 0 0;
     }
-    .goods-exhibition-arrow {
-        width: 36px;
-        height: 36px;
-        font-size: 18px;
-    }
-}
-
-@media (max-width: 480px) {
     .goods-exhibition-arrow {
         display: none; /* 手机端隐藏箭头 */
     }
