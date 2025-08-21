@@ -12,7 +12,7 @@ if (!defined('WPINC')) {
 function goods_exhibition_register_shortcode() {
     add_shortcode('goods_exhibition', 'goods_exhibition_shortcode_callback');
 }
-add_action('init'， 'goods_exhibition_register_shortcode');
+add_action('init', 'goods_exhibition_register_shortcode');
 
 function goods_exhibition_shortcode_callback($atts) {
     // 默认不限制数量，获取所有产品
@@ -59,8 +59,9 @@ function goods_exhibition_shortcode_callback($atts) {
             <div class="goods-exhibition-slider">
                 <?php foreach ($items as $product) :
                     $item_url = !empty($product['url']) ? esc_url($product['url']) : '';
+                    if ($item_url) :
                 ?>
-                    <div class="goods-exhibition-item <?php echo !empty($item_url) ? 'has-link' : ''; ?>" <?php echo !empty($item_url) ? 'onclick="window.open(\'' . $item_url . '\', \'_blank\')"' : ''; ?>>
+                    <a href="<?php echo $item_url; ?>" target="_blank" rel="noopener noreferrer" class="goods-exhibition-item has-link">
                         <div class="goods-exhibition-content">
                             <h3 class="goods-exhibition-title"><?php echo esc_html($product['name']); ?></h3>
                             <div class="goods-exhibition-description"><?php echo wp_kses_post($product['description']); ?></div>
@@ -69,9 +70,23 @@ function goods_exhibition_shortcode_callback($atts) {
                             <?php endif; ?>
                         </div>
                         <div class="goods-exhibition-image-container">
-                            <img src="<?php echo esc_url($product['image_url']); ?>" alt="<?php echo esc_attr($product['name']); ?>" class="goods-exhibition-image">
+                            <img src="<?php echo esc_url($product['image_url']); ?>" alt="<?php echo esc_attr($product['name']); ?>" class="goods-exhibition-image no-lightbox">
+                        </div>
+                    </a>
+                <?php else: ?>
+                    <div class="goods-exhibition-item">
+                        <div class="goods-exhibition-content">
+                            <h3 class="goods-exhibition-title"><?php echo esc_html($product['name']); ?></h3>
+                            <div class="goods-exhibition-description"><?php echo wp_kses_post($product['description']); ?></div>
+                            <?php if (!empty($product['price'])) : ?>
+                                <div class="goods-exhibition-price"><?php echo esc_html($product['price']); ?></div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="goods-exhibition-image-container">
+                            <img src="<?php echo esc_url($product['image_url']); ?>" alt="<?php echo esc_attr($product['name']); ?>" class="goods-exhibition-image no-lightbox">
                         </div>
                     </div>
+                <?php endif; ?>
                 <?php endforeach; ?>
             </div>
             <button class="goods-exhibition-arrow goods-exhibition-arrow-right" aria-label="下一个"><span>&#10095;</span></button>
