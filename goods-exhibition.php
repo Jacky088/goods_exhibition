@@ -3,7 +3,7 @@
  * Plugin Name: 好物页面插件
  * Plugin URI: https://github.com/Jacky088/goods_exhibition
  * Description: 一个展示好物商品的WordPress插件
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: 木木
  * Author URI: https://github.com/Jacky088/goods_exhibition
  * License: 
