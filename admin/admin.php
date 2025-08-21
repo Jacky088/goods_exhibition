@@ -116,10 +116,7 @@ function goods_exhibition_admin_page() {
             </table>
         <?php endif; ?>
 
-        <hr>
-        <p style="text-align:center; font-size: 12px; color: #777;">
-            感谢支持，该插件由 <a href="https://veryjack.com" target="_blank">VeryJack</a> 开发。
-        </p>
+  
 
     </div>
     <?php
@@ -354,7 +351,7 @@ function goods_exhibition_add_product_page() {
 
         <hr>
         <p style="text-align:center; font-size: 12px; color: #777;">
-            感谢支持，该插件由 <a href="https://veryjack.com" target="_blank">VeryJack</a> 开发。
+            感谢使用 <a href="https://cn.wordpress.org/" target="_blank">Wordpressk</a> 进行创作。
         </p>
     </div>
     <?php
