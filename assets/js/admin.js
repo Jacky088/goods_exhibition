@@ -18,6 +18,7 @@
      */
     function initMediaUploader() {
         var mediaUploader;
+        var mediaUploaderPoster;
         
         $('#upload_image_button').on('click', function(e) {
             e.preventDefault();
@@ -76,6 +77,59 @@
                 reader.readAsDataURL(file);
             }
         });
+
+        // 海报图片媒体上传器
+        $('#upload_poster_image_button').on('click', function(e) {
+            e.preventDefault();
+
+            if (mediaUploaderPoster) {
+                mediaUploaderPoster.open();
+                return;
+            }
+
+            mediaUploaderPoster = wp.media({
+                title: '选择海报图片',
+                button: {
+                    text: '使用此图片'
+                },
+                multiple: false
+            });
+
+            mediaUploaderPoster.on('select', function() {
+                var attachment = mediaUploaderPoster.state().get('selection').first().toJSON();
+
+                $('#poster_image_url').val(attachment.url);
+
+                var $preview = $('.poster-image-preview');
+                if ($preview.find('img').length === 0) {
+                    $preview.html('<img src="' + attachment.url + '" alt="海报图片预览" style="max-width: 200px; max-height: 200px; margin-bottom: 10px; display: block;">');
+                } else {
+                    $preview.find('img').attr('src', attachment.url);
+                }
+            });
+
+            mediaUploaderPoster.open();
+        });
+
+        // 处理直接上传的海报图片预览
+        $('#poster_image').on('change', function() {
+            var file = this.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var $preview = $('.poster-image-preview');
+                    if ($preview.find('img').length === 0) {
+                        $preview.html('<img src="' + e.target.result + '" alt="海报图片预览" style="max-width: 200px; max-height: 200px; margin-bottom: 10px; display: block;">');
+                    } else {
+                        $preview.find('img').attr('src', e.target.result);
+                    }
+
+                    // 清空隐藏字段，因为我们将使用直接上传的图片
+                    $('#poster_image_url').val('');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
     }
     
     /**
@@ -88,6 +142,9 @@
             var $descriptionField = $('#product_description');
             var $imageUrlField = $('#product_image_url');
             var $imageField = $('#product_image');
+            var $posterImageUrlField = $('#poster_image_url');
+            var $posterImageField = $('#poster_image');
+            var $isPosterCheckbox = $('#product_is_poster');
             var isValid = true;
             
             // 清除之前的错误提示
@@ -109,6 +166,14 @@
             if (!$imageUrlField.val() && !$imageField[0].files.length) {
                 isValid = false;
                 $imageField.after('<p class="form-error" style="color: #dc3232;">请上传产品图片或从媒体库选择图片</p>');
+            }
+
+            // 如果勾选了标记为海报，必须有海报图片
+            if ($isPosterCheckbox.is(':checked')) {
+                if (!$posterImageUrlField.val() && !$posterImageField[0].files.length) {
+                    isValid = false;
+                    $posterImageField.after('<p class="form-error" style="color: #dc3232;">请上传海报图片或从媒体库选择海报图片</p>');
+                }
             }
             
             return isValid;
