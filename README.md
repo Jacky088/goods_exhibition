@@ -1,6 +1,15 @@
+## 软件简介
+
+这是一个wordpress插件，用来创建一个页面显示好物商品信息，风格借鉴了apple
+
 ## 使用方法
 
-后台上传并激活插件，新建页面填入 [goods_exhibition] 短代码即可
+1.后台上传并激活插件  
+2.新建页面，填写 [goods_exhibition] 短代码即可在前端查看效果  
+
+## 界面预览
+
+![image]([hthttps://github.com/Jacky088/goods_exhibition/blob/main/screenshot-preview-pc-goods.png))
 
 ## 致谢
 
