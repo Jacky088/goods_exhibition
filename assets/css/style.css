@@ -54,7 +54,6 @@
 }
 
 /* 商品卡片 */
-/* 默认：一屏3个 */
 .goods-exhibition-item {
     flex: 0 0 33.3333%; /* 一屏显示三个 */
     margin: 0 12px;
@@ -72,6 +71,7 @@
     text-decoration: none;
     color: inherit;
 }
+
 /* 有链接的商品容器用a包裹，需要设置为块元素和指针样式 */
 .goods-exhibition-item.has-link {
     cursor: pointer;
@@ -95,14 +95,32 @@
     flex-grow: 1;
 }
 
-.goods-exhibition-title {
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0 0 6px;
-    letter-spacing: -0.03em;
-    color: #000;
+/* 标题 - NEW标签位置回到右侧inline-flex */
+.goods-exhibition-content > h3.goods-exhibition-title {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5em !important;
+    margin: 0 0 6px !important;
+    font-weight: 700 !important;
+    font-size: 20px !important;
+    letter-spacing: -0.03em !important;
+    color: #000 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
 }
 
+/* NEW标签内联SVG宽高固定 */
+.goods-exhibition-new-badge-svg {
+    display: inline-block !important;
+    width: 48px !important;
+    height: 24px !important;
+    vertical-align: text-bottom !important;
+    margin-left: 0.3em !important;
+    user-select: none !important;
+    pointer-events: none !important;
+}
+
+/* 商品描述 */
 .goods-exhibition-description {
     font-size: 14px;
     line-height: 1.4;
@@ -110,6 +128,7 @@
     margin-bottom: 8px;
 }
 
+/* 价格 */
 .goods-exhibition-price {
     font-weight: 600;
     font-size: 16px;
@@ -120,14 +139,15 @@
 .goods-exhibition-image-container {
     padding: 0 20px 20px 20px;
     flex-shrink: 0;
+    position: relative;
 }
 
 .goods-exhibition-image {
     width: 100%;
     height: auto;
     object-fit: contain;
-    border-radius: 24px;          /* 统一圆角 */
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);  /* 轻微阴影 */
+    border-radius: 24px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
     user-select: none;
 }
 
@@ -200,4 +220,9 @@
     .goods-exhibition-arrow {
         display: none; /* 手机端隐藏箭头 */
     }
+}
+
+/* 强制限制外层容器，防止溢出或缩放 */
+.goods-exhibition-title {
+    overflow: visible !important;
 }
