@@ -9,9 +9,6 @@ if (!defined('WPINC')) {
     die;
 }
 
-/**
- * 添加管理菜单
- */
 function goods_exhibition_add_admin_menu() {
     add_menu_page(
         '好物页面插件',
@@ -43,9 +40,6 @@ function goods_exhibition_add_admin_menu() {
 }
 add_action('admin_menu', 'goods_exhibition_add_admin_menu');
 
-/**
- * 产品列表页面
- */
 function goods_exhibition_admin_page() {
     if (!current_user_can('manage_options')) {
         return;
@@ -80,8 +74,9 @@ function goods_exhibition_admin_page() {
                         <th>描述</th>
                         <th>价格</th>
                         <th>跳转链接</th>
-                        <th>类别</th><!-- 新增表头 -->
+                        <th>类别</th>
                         <th>是否为新</th>
+                        <th>是否为海报</th>
                         <th>添加日期</th>
                         <th>更新日期</th>
                         <th>操作</th>
@@ -102,8 +97,9 @@ function goods_exhibition_admin_page() {
                             <td><?php echo wp_trim_words(esc_html($product['description']), 20); ?></td>
                             <td><?php echo esc_html($product['price']); ?></td>
                             <td><?php echo !empty($product['url']) ? '<a href="' . esc_url($product['url']) . '" target="_blank">' . esc_url($product['url']) . '</a>' : '无'; ?></td>
-                            <td><?php echo esc_html($product['category']); ?></td><!-- 显示类别 -->
+                            <td><?php echo esc_html($product['category']); ?></td>
                             <td><?php echo ($product['is_new'] == 1) ? '是' : '否'; ?></td>
+                            <td><?php echo ($product['is_poster'] == 1) ? '是' : '否'; ?></td>
                             <td><?php echo date_i18n(get_option('date_format'), strtotime($product['created_at'])); ?></td>
                             <td><?php echo date_i18n(get_option('date_format'), strtotime($product['updated_at'])); ?></td>
                             <td>
@@ -115,16 +111,10 @@ function goods_exhibition_admin_page() {
                 </tbody>
             </table>
         <?php endif; ?>
-
-  
-
     </div>
     <?php
 }
 
-/**
- * 添加/编辑产品页面
- */
 function goods_exhibition_add_product_page() {
     if (!current_user_can('manage_options')) {
         return;
@@ -133,7 +123,6 @@ function goods_exhibition_add_product_page() {
     global $wpdb;
     $table_name = $wpdb->prefix . 'goods_exhibition';
 
-    // 默认值
     $product = array(
         'id' => 0,
         'name' => '',
@@ -142,7 +131,9 @@ function goods_exhibition_add_product_page() {
         'image_url' => '',
         'url' => '',
         'is_new' => 0,
-        'category' => '' // 默认category字段
+        'is_poster' => 0,
+        'category' => '',
+        'poster_image_url' => '',
     );
 
     $is_edit = false;
@@ -165,10 +156,13 @@ function goods_exhibition_add_product_page() {
         $product_description = wp_kses_post($_POST['product_description']);
         $product_price = sanitize_text_field($_POST['product_price']);
         $product_url = esc_url_raw($_POST['product_url']);
-        $product_category = sanitize_text_field($_POST['product_category']); // 新增类别字段
+        $product_category = sanitize_text_field($_POST['product_category']);
         $product_image_url_from_media = esc_url_raw($_POST['product_image_url']);
         $product_is_new = isset($_POST['product_is_new']) ? 1 : 0;
+        $product_is_poster = isset($_POST['product_is_poster']) ? 1 : 0;
+        $poster_image_url_from_media = esc_url_raw($_POST['poster_image_url']);
         $uploaded_image_url = '';
+        $uploaded_poster_image_url = '';
         $errors = array();
 
         if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] == UPLOAD_ERR_OK) {
@@ -203,7 +197,40 @@ function goods_exhibition_add_product_page() {
             $errors[] = '图片上传时发生错误，错误代码：' . $_FILES['product_image']['error'];
         }
 
+        if (isset($_FILES['poster_image']) && $_FILES['poster_image']['error'] == UPLOAD_ERR_OK) {
+            if (!function_exists('goods_exhibition_check_upload_dir')) {
+                require_once GOODS_EXHIBITION_PATH . 'includes/functions.php';
+            }
+            if (!goods_exhibition_check_upload_dir()) {
+                $errors[] = '上传目录不可写或不存在，请检查插件文件夹权限。';
+            } else {
+                require_once(ABSPATH . 'wp-admin/includes/file.php');
+                require_once(ABSPATH . 'wp-admin/includes/image.php');
+
+                $upload_dir = GOODS_EXHIBITION_UPLOAD_DIR;
+                $file_info = pathinfo($_FILES['poster_image']['name']);
+                $file_extension = !empty($file_info['extension']) ? '.' . strtolower($file_info['extension']) : '';
+                $allowed_extensions = array('.jpg', '.jpeg', '.png', '.gif');
+
+                if (!in_array($file_extension, $allowed_extensions)) {
+                    $errors[] = '只允许上传 JPG, PNG, GIF 格式的海报图片。';
+                } else {
+                    $file_name = wp_unique_filename($upload_dir, sanitize_file_name($file_info['filename']) . $file_extension);
+                    $upload_path = $upload_dir . $file_name;
+
+                    if (move_uploaded_file($_FILES['poster_image']['tmp_name'], $upload_path)) {
+                        $uploaded_poster_image_url = GOODS_EXHIBITION_URL . 'uploads/' . $file_name;
+                    } else {
+                        $errors[] = '上传海报图片失败，请再试一次。';
+                    }
+                }
+            }
+        } elseif (isset($_FILES['poster_image']) && $_FILES['poster_image']['error'] != UPLOAD_ERR_NO_FILE) {
+            $errors[] = '海报图片上传时发生错误，错误代码：' . $_FILES['poster_image']['error'];
+        }
+
         $final_image_url = !empty($uploaded_image_url) ? $uploaded_image_url : $product_image_url_from_media;
+        $final_poster_image_url = !empty($uploaded_poster_image_url) ? $uploaded_poster_image_url : $poster_image_url_from_media;
 
         if (empty($product_name)) {
             $errors[] = '产品名称不能为空';
@@ -214,6 +241,9 @@ function goods_exhibition_add_product_page() {
         if (empty($final_image_url)) {
             $errors[] = '请上传产品图片或从媒体库选择';
         }
+        if ($product_is_poster && empty($final_poster_image_url)) {
+            $errors[] = '已勾选“标记为海报”，请上传或选择海报图片';
+        }
 
         if (empty($errors)) {
             $data = array(
@@ -222,8 +252,10 @@ function goods_exhibition_add_product_page() {
                 'price' => $product_price,
                 'image_url' => $final_image_url,
                 'url' => $product_url,
-                'category' => $product_category, // 保存类别字段
+                'category' => $product_category,
                 'is_new' => $product_is_new,
+                'is_poster' => $product_is_poster,
+                'poster_image_url' => $final_poster_image_url,
                 'updated_at' => current_time('mysql'),
             );
 
@@ -266,7 +298,9 @@ function goods_exhibition_add_product_page() {
                         'image_url' => '',
                         'url' => '',
                         'category' => '',
-                        'is_new' => 0
+                        'is_new' => 0,
+                        'is_poster' => 0,
+                        'poster_image_url' => '',
                     );
                     $is_edit = false;
                     $page_title = '添加新产品';
@@ -330,8 +364,6 @@ function goods_exhibition_add_product_page() {
                         </div>
                         <input type="hidden" name="product_image_url" id="product_image_url" value="<?php echo esc_url($product['image_url']); ?>">
                         <input type="button" id="upload_image_button" class="button" value="从媒体库选择图片">
-                        <p class="description">或直接上传新图片：</p>
-                        <input type="file" name="product_image" id="product_image" accept="image/*">
                         <p class="description">推荐图片尺寸：500x500像素</p>
                     </td>
                 </tr>
@@ -343,6 +375,26 @@ function goods_exhibition_add_product_page() {
                         <p class="description">勾选后，产品卡片上会显示“New”标签。</p>
                     </td>
                 </tr>
+                <tr>
+                    <th scope="row"><label for="product_is_poster">标记为海报</label></th>
+                    <td>
+                        <input type="checkbox" name="product_is_poster" id="product_is_poster" value="1" <?php checked(isset($product['is_poster']) ? $product['is_poster'] : 0, 1); ?>>
+                        <label for="product_is_poster">勾选后，海报将在首页滚动显示</label>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="poster_image_url">海报图片</label></th>
+                    <td>
+                        <div class="poster-image-preview">
+                            <?php if (!empty($product['poster_image_url'])) : ?>
+                                <img src="<?php echo esc_url($product['poster_image_url']); ?>" alt="海报图片预览" style="max-width: 200px; max-height: 200px; margin-bottom: 10px; display: block;">
+                            <?php endif; ?>
+                        </div>
+                        <input type="hidden" name="poster_image_url" id="poster_image_url" value="<?php echo esc_url($product['poster_image_url']); ?>">
+                        <input type="button" id="upload_poster_image_button" class="button" value="从媒体库选择海报图片">
+                        <p class="description">推荐图片尺寸：1200x400像素</p>
+                    </td>
+                </tr>
             </table>
             <p class="submit">
                 <input type="submit" name="goods_exhibition_submit" id="submit" class="button button-primary" value="<?php echo $is_edit ? '更新产品' : '添加产品'; ?>">
@@ -350,16 +402,11 @@ function goods_exhibition_add_product_page() {
         </form>
 
         <hr>
-        <p style="text-align:center; font-size: 12px; color: #777;">
-            感谢使用 <a href="https://cn.wordpress.org/" target="_blank">Wordpressk</a> 进行创作。
-        </p>
+        <!-- 底部感谢文字已移除 -->
     </div>
     <?php
 }
 
-/**
- * 删除产品
- */
 function goods_exhibition_delete_product($product_id) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'goods_exhibition';
@@ -369,14 +416,22 @@ function goods_exhibition_delete_product($product_id) {
     if ($product) {
         $wpdb->delete($table_name, array('id' => $product_id), array('%d'));
 
-        $image_url = $product['image_url'];
         $upload_dir = GOODS_EXHIBITION_UPLOAD_DIR;
         $upload_url = GOODS_EXHIBITION_URL . 'uploads/';
 
+        $image_url = $product['image_url'];
         if (strpos($image_url, $upload_url) === 0) {
             $file_name = basename($image_url);
             $file_path = $upload_dir . $file_name;
+            if (file_exists($file_path)) {
+                unlink($file_path);
+            }
+        }
 
+        $poster_image_url = $product['poster_image_url'];
+        if (strpos($poster_image_url, $upload_url) === 0) {
+            $file_name = basename($poster_image_url);
+            $file_path = $upload_dir . $file_name;
             if (file_exists($file_path)) {
                 unlink($file_path);
             }
