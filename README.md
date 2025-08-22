@@ -9,7 +9,7 @@
 
 ## 界面预览
 
-![image]([https://github.com/Jacky088/goods_exhibition/blob/main/screenshot-preview-pc-goods.png)
+![image](https://github.com/Jacky088/goods_exhibition/blob/main/screenshot-preview-pc-goods.png)
 
 ## 致谢
 
