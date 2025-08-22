@@ -61,8 +61,8 @@
     min-width: 280px;
     max-width: 360px;
     background: #fff;
-    border-radius: 24px;
-    box-shadow: 0 14px 20px rgba(0, 0, 0, 0.06);
+    border-radius: 24px;          /* 统一圆角 */
+    box-shadow: 0 14px 20px rgba(0, 0, 0, 0.06); /* 柔和阴影 */
     cursor: default;
     display: flex;
     flex-direction: column;
@@ -126,8 +126,8 @@
     width: 100%;
     height: auto;
     object-fit: contain;
-    border-radius: 16px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    border-radius: 24px;          /* 统一圆角 */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);  /* 轻微阴影 */
     user-select: none;
 }
 
