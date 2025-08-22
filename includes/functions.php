@@ -61,6 +61,7 @@ function goods_exhibition_get_poster_products() {
 
 /**
  * 检查产品是否是新产品（一个月内添加的）
+ * 【此函数维持，可做为备用，不影响NEW标签显示】
  *
  * @param string $created_at 创建日期
  * @return bool 是否是新产品
@@ -73,23 +74,15 @@ function goods_exhibition_is_new_product($created_at) {
 }
 
 /**
- * 生成产品图片的HTML
+ * 生成产品图片的HTML（不输出NEW标签，避免样式冲突）
  *
  * @param array $product 产品信息
  * @return string HTML代码
  */
 function goods_exhibition_get_product_image_html($product) {
-    $is_new = goods_exhibition_is_new_product($product['created_at']);
-
     $html = '<div class="goods-exhibition-image-container">';
-
-    if ($is_new) {
-        $html .= '<span class="goods-exhibition-new-badge">NEW</span>';
-    }
-
     $html .= '<img src="' . esc_url($product['image_url']) . '" alt="' . esc_attr($product['name']) . '" class="goods-exhibition-image">';
     $html .= '</div>';
-
     return $html;
 }
 
@@ -128,3 +121,4 @@ function goods_exhibition_safe_delete_file($file_path) {
 
     return false;
 }
+
