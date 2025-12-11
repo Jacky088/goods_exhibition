@@ -79,11 +79,8 @@ wp-content/plugins/
 
 ## 界面预览
 
-如果仓库中存在截图，可按以下方式展示：
-
-```markdown
 ![Goods Exhibition 预览](./screenshot-preview-pc-goods.png)
-```
+
 
 ---
 
@@ -121,12 +118,6 @@ goods_exhibition/
 
 ---
 
-## 版本与发布
-
-- 可通过 GitHub Releases 查看更新记录  
-- 推荐使用最新稳定版用于生产环境  
-
----
 
 ## 许可证（License）
 
