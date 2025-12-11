@@ -126,5 +126,6 @@ goods_exhibition/
 - 提交 Issue 反馈问题  
 - 提交 Pull Request 增强功能  
 - Fork 项目进行二次开发  
+---
 
 如果这个插件对你有帮助，欢迎点一个 ⭐ 支持作者！
