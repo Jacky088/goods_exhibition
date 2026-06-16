@@ -12,7 +12,8 @@ if (!defined('WPINC')) {
 /**
  * 注册短代码
  */
-function goods_exhibition_register_shortcode() {
+function goods_exhibition_register_shortcode()
+{
     add_shortcode('goods_exhibition', 'goods_exhibition_shortcode_callback');
 }
 add_action('init', 'goods_exhibition_register_shortcode');
@@ -22,7 +23,8 @@ add_action('init', 'goods_exhibition_register_shortcode');
  *
  * @return string
  */
-function goods_exhibition_render_poster_slider() {
+function goods_exhibition_render_poster_slider()
+{
     // 原样保留不变
     if (!function_exists('goods_exhibition_get_poster_products')) {
         require_once GOODS_EXHIBITION_PATH . 'includes/functions.php';
@@ -35,43 +37,58 @@ function goods_exhibition_render_poster_slider() {
     ob_start();
     ?>
     <!-- 海报幻灯片容器 -->
-    <div class="goods-exhibition-wrapper poster-slider" style="margin:0 auto; padding: 0 40px; border-radius: 24px; box-shadow: 0 6px 30px rgba(0,0,0,0.08); overflow: hidden;">
+    <div class="goods-exhibition-wrapper poster-slider"
+        style="margin:0 auto; padding: 0 40px; border-radius: 24px; box-shadow: 0 6px 30px rgba(0,0,0,0.08); overflow: hidden;">
         <div class="poster-inner" style="margin: 0 -40px; border-radius: 24px; overflow: hidden; position: relative;">
-            <button class="goods-exhibition-arrow goods-exhibition-arrow-left" aria-label="上一个" style="left: 0; z-index: 20;"><span>&#10094;</span></button>
-            <div class="goods-exhibition-slider poster-slider" style="display: flex; overflow-x: hidden; scroll-behavior: smooth;">
-                <?php foreach ($posters as $poster) :
+            <button class="goods-exhibition-arrow goods-exhibition-arrow-left" aria-label="上一个"
+                style="left: 0; z-index: 20;"><span>&#10094;</span></button>
+            <div class="goods-exhibition-slider poster-slider"
+                style="display: flex; overflow-x: hidden; scroll-behavior: smooth;">
+                <?php foreach ($posters as $poster):
                     $item_url = !empty($poster['url']) ? esc_url($poster['url']) : '';
                     $name = esc_html($poster['name']);
                     $desc = wp_kses_post($poster['description']);
                     $price = esc_html($poster['price']);
                     $image_url = esc_url($poster['poster_image_url']);
-                ?>
-                <?php if ($item_url): ?>
-                <a href="<?php echo $item_url; ?>" target="_blank" rel="noopener noreferrer" class="goods-exhibition-item poster-item has-link" style="flex: 0 0 100%; max-width: 100%; margin: 0; position: relative; border-radius: 24px; overflow: hidden;">
-                    <div class="goods-exhibition-content poster-content" style="padding: 40px; color: white; position: absolute; bottom: 30px; left: 30px; z-index: 10; max-width: 40%; text-shadow: 0 0 5px rgba(0,0,0,0.9);">
-                        <h3 class="goods-exhibition-title" style="color: #fff; font-size: 2rem;"><?php echo $name; ?></h3>
-                        <div class="goods-exhibition-description" style="font-size: 1.2rem; margin: 10px 0;"><?php echo $desc; ?></div>
-                        <?php if ($price) : ?>
-                            <div class="goods-exhibition-price" style="font-weight: 700; font-size: 1.4rem; color: #f5a623;"><?php echo $price; ?></div>
-                        <?php endif; ?>
-                    </div>
-                    <img src="<?php echo $image_url; ?>" alt="<?php echo $name; ?>" style="width: 100%; max-height: 400px; height: auto; border-radius: 24px; object-fit: cover; user-select: none; display: block;">
-                </a>
-                <?php else: ?>
-                <div class="goods-exhibition-item poster-item" style="flex: 0 0 100%; max-width: 100%; margin: 0; position: relative; border-radius: 24px; overflow: hidden;">
-                    <div class="goods-exhibition-content poster-content" style="padding: 40px; color: white; position: absolute; bottom: 30px; left: 30px; z-index: 10; max-width: 40%; text-shadow: 0 0 5px rgba(0,0,0,0.9);">
-                        <h3 class="goods-exhibition-title" style="color: #fff; font-size: 2rem;"><?php echo $name; ?></h3>
-                        <div class="goods-exhibition-description" style="font-size: 1.2rem; margin: 10px 0;"><?php echo $desc; ?></div>
-                        <?php if ($price) : ?>
-                            <div class="goods-exhibition-price" style="font-weight: 700; font-size: 1.4rem; color: #f5a623;"><?php echo $price; ?></div>
-                        <?php endif; ?>
-                    </div>
-                    <img src="<?php echo $image_url; ?>" alt="<?php echo $name; ?>" style="width: 100%; max-height: 400px; height: auto; border-radius: 24px; object-fit: cover; user-select: none; display: block;">
-                </div>
-                <?php endif; ?>
+                    ?>
+                    <?php if ($item_url): ?>
+                        <a href="<?php echo $item_url; ?>" target="_blank" rel="noopener noreferrer"
+                            class="goods-exhibition-item poster-item has-link"
+                            style="flex: 0 0 100%; max-width: 100%; margin: 0; position: relative; border-radius: 24px; overflow: hidden;">
+                            <div class="goods-exhibition-content poster-content"
+                                style="padding: 40px; color: white; position: absolute; bottom: 30px; left: 30px; z-index: 10; max-width: 40%; text-shadow: 0 0 5px rgba(0,0,0,0.9);">
+                                <h3 class="goods-exhibition-title" style="color: #fff; font-size: 2rem;"><?php echo $name; ?></h3>
+                                <div class="goods-exhibition-description" style="font-size: 1.2rem; margin: 10px 0;">
+                                    <?php echo $desc; ?></div>
+                                <?php if ($price): ?>
+                                    <div class="goods-exhibition-price" style="font-weight: 700; font-size: 1.4rem; color: #f5a623;">
+                                        <?php echo $price; ?></div>
+                                <?php endif; ?>
+                            </div>
+                            <img src="<?php echo $image_url; ?>" alt="<?php echo $name; ?>" loading="lazy"
+                                style="width: 100%; max-height: 400px; height: auto; border-radius: 24px; object-fit: cover; user-select: none; display: block;">
+                        </a>
+                    <?php else: ?>
+                        <div class="goods-exhibition-item poster-item"
+                            style="flex: 0 0 100%; max-width: 100%; margin: 0; position: relative; border-radius: 24px; overflow: hidden;">
+                            <div class="goods-exhibition-content poster-content"
+                                style="padding: 40px; color: white; position: absolute; bottom: 30px; left: 30px; z-index: 10; max-width: 40%; text-shadow: 0 0 5px rgba(0,0,0,0.9);">
+                                <h3 class="goods-exhibition-title" style="color: #fff; font-size: 2rem;"><?php echo $name; ?></h3>
+                                <div class="goods-exhibition-description" style="font-size: 1.2rem; margin: 10px 0;">
+                                    <?php echo $desc; ?></div>
+                                <?php if ($price): ?>
+                                    <div class="goods-exhibition-price" style="font-weight: 700; font-size: 1.4rem; color: #f5a623;">
+                                        <?php echo $price; ?></div>
+                                <?php endif; ?>
+                            </div>
+                            <img src="<?php echo $image_url; ?>" alt="<?php echo $name; ?>" loading="lazy"
+                                style="width: 100%; max-height: 400px; height: auto; border-radius: 24px; object-fit: cover; user-select: none; display: block;">
+                        </div>
+                    <?php endif; ?>
                 <?php endforeach; ?>
             </div>
-            <button class="goods-exhibition-arrow goods-exhibition-arrow-right" aria-label="下一个" style="right: 0; z-index: 20;"><span>&#10095;</span></button>
+            <button class="goods-exhibition-arrow goods-exhibition-arrow-right" aria-label="下一个"
+                style="right: 0; z-index: 20;"><span>&#10095;</span></button>
         </div>
     </div>
 
@@ -84,6 +101,7 @@ function goods_exhibition_render_poster_slider() {
             box-shadow: 0 14px 20px rgba(0, 0, 0, 0.06);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
+
         .goods-exhibition-wrapper.poster-slider .goods-exhibition-item img {
             width: 100%;
             height: auto;
@@ -92,10 +110,12 @@ function goods_exhibition_render_poster_slider() {
             user-select: none;
             display: block;
         }
+
         .goods-exhibition-arrow.goods-exhibition-arrow-left,
         .goods-exhibition-arrow.goods-exhibition-arrow-right {
             z-index: 20;
         }
+
         @media (max-width: 480px) {
             .goods-exhibition-wrapper.poster-slider .goods-exhibition-content.poster-content {
                 position: absolute !important;
@@ -105,24 +125,27 @@ function goods_exhibition_render_poster_slider() {
                 padding: 10px 15px !important;
                 box-sizing: border-box !important;
                 color: #fff !important;
-                text-shadow: 0 0 5px rgba(0,0,0,0.9) !important;
+                text-shadow: 0 0 5px rgba(0, 0, 0, 0.9) !important;
                 font-size: clamp(1rem, 4vw, 1.8rem) !important;
                 line-height: 1.3 !important;
                 white-space: normal !important;
                 word-break: break-word !important;
             }
+
             .goods-exhibition-wrapper.poster-slider .goods-exhibition-content.poster-content .goods-exhibition-title {
                 font-size: clamp(1.2rem, 5vw, 2rem) !important;
                 line-height: 1.2 !important;
                 margin-bottom: 0.3em !important;
                 word-break: break-word !important;
             }
+
             .goods-exhibition-wrapper.poster-slider .goods-exhibition-content.poster-content .goods-exhibition-description {
                 font-size: clamp(0.85rem, 3vw, 1.2rem) !important;
                 line-height: 1.25 !important;
                 margin-bottom: 0.25em !important;
                 word-break: break-word !important;
             }
+
             .goods-exhibition-wrapper.poster-slider .goods-exhibition-content.poster-content .goods-exhibition-price {
                 font-size: clamp(0.9rem, 3.5vw, 1.3rem) !important;
                 line-height: 1.3 !important;
@@ -142,18 +165,20 @@ function goods_exhibition_render_poster_slider() {
  * @param array $atts
  * @return string
  */
-function goods_exhibition_shortcode_callback($atts) {
+function goods_exhibition_shortcode_callback($atts)
+{
     $atts = shortcode_atts(array('limit' => -1), $atts, 'goods_exhibition');
+
+    // 验证并清理limit参数
+    $limit = intval($atts['limit']);
 
     $output = goods_exhibition_render_poster_slider();
 
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'goods_exhibition';
-
-    $limit = intval($atts['limit']);
-    $limit_clause = $limit > 0 ? "LIMIT $limit" : "";
-
-    $products = $wpdb->get_results("SELECT * FROM {$table_name} ORDER BY category ASC, created_at DESC $limit_clause", ARRAY_A);
+    if (!function_exists('goods_exhibition_get_frontend_products')) {
+        require_once GOODS_EXHIBITION_PATH . 'includes/functions.php';
+    }
+    // 使用缓存的查询函数
+    $products = goods_exhibition_get_frontend_products($limit);
 
     if (empty($products)) {
         return $output . '<div class="goods-exhibition-empty">暂无产品</div>';
@@ -181,49 +206,37 @@ function goods_exhibition_shortcode_callback($atts) {
         <div class="goods-exhibition-wrapper" style="margin-top: 0;">
             <button class="goods-exhibition-arrow goods-exhibition-arrow-left" aria-label="上一个"><span>&#10094;</span></button>
             <div class="goods-exhibition-slider">
-                <?php foreach ($items as $product) :
+                <?php foreach ($items as $product):
                     $item_url = !empty($product['url']) ? esc_url($product['url']) : '';
                     $is_new = isset($product['is_new']) && intval($product['is_new']) === 1;
                     ?>
-                    <?php if ($item_url) : ?>
-                        <a href="<?php echo $item_url; ?>" target="_blank" rel="noopener noreferrer" class="goods-exhibition-item has-link">
+                    <?php if ($item_url): ?>
+                        <a href="<?php echo $item_url; ?>" target="_blank" rel="noopener noreferrer"
+                            class="goods-exhibition-item has-link">
                             <div class="goods-exhibition-content">
                                 <h3 class="goods-exhibition-title">
                                     <?php echo esc_html($product['name']); ?>
-                                    <?php if ($is_new) : ?>
+                                    <?php if ($is_new): ?>
                                         <!-- NEW标签：内联SVG，固定宽高，放商品名称右侧 -->
-                                        <svg 
-                                          class="goods-exhibition-new-badge-svg" 
-                                          xmlns="http://www.w3.org/2000/svg" 
-                                          aria-label="NEW"
-                                          role="img" 
-                                          width="48" 
-                                          height="24" 
-                                          viewBox="0 0 48 24" 
-                                          style="vertical-align:text-bottom; margin-left:0.3em; user-select:none; pointer-events:none;"
-                                        >
-                                          <rect x="0" y="0" width="48" height="24" rx="12" ry="12" fill="#d9534f" />
-                                          <text 
-                                            x="24" y="16" 
-                                            font-family="Helvetica, Arial, sans-serif" 
-                                            font-size="14" 
-                                            font-weight="700" 
-                                            fill="white" 
-                                            text-anchor="middle" 
-                                            dominant-baseline="middle"
-                                          >
-                                            NEW
-                                          </text>
+                                        <svg class="goods-exhibition-new-badge-svg" xmlns="http://www.w3.org/2000/svg" aria-label="NEW"
+                                            role="img" width="48" height="24" viewBox="0 0 48 24"
+                                            style="vertical-align:text-bottom; margin-left:0.3em; user-select:none; pointer-events:none;">
+                                            <rect x="0" y="0" width="48" height="24" rx="12" ry="12" fill="#d9534f" />
+                                            <text x="24" y="16" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700"
+                                                fill="white" text-anchor="middle" dominant-baseline="middle">
+                                                NEW
+                                            </text>
                                         </svg>
                                     <?php endif; ?>
                                 </h3>
                                 <div class="goods-exhibition-description"><?php echo wp_kses_post($product['description']); ?></div>
-                                <?php if (!empty($product['price'])) : ?>
+                                <?php if (!empty($product['price'])): ?>
                                     <div class="goods-exhibition-price"><?php echo esc_html($product['price']); ?></div>
                                 <?php endif; ?>
                             </div>
                             <div class="goods-exhibition-image-container">
-                                <img src="<?php echo esc_url($product['image_url']); ?>" alt="<?php echo esc_attr($product['name']); ?>" class="goods-exhibition-image">
+                                <img src="<?php echo esc_url($product['image_url']); ?>" alt="<?php echo esc_attr($product['name']); ?>"
+                                    loading="lazy" class="goods-exhibition-image">
                             </div>
                         </a>
                     <?php else: ?>
@@ -231,40 +244,27 @@ function goods_exhibition_shortcode_callback($atts) {
                             <div class="goods-exhibition-content">
                                 <h3 class="goods-exhibition-title">
                                     <?php echo esc_html($product['name']); ?>
-                                    <?php if ($is_new) : ?>
+                                    <?php if ($is_new): ?>
                                         <!-- NEW标签：内联SVG，固定宽高，放商品名称右侧 -->
-                                        <svg 
-                                          class="goods-exhibition-new-badge-svg" 
-                                          xmlns="http://www.w3.org/2000/svg" 
-                                          aria-label="NEW"
-                                          role="img" 
-                                          width="48" 
-                                          height="24" 
-                                          viewBox="0 0 48 24" 
-                                          style="vertical-align:text-bottom; margin-left:0.3em; user-select:none; pointer-events:none;"
-                                        >
-                                          <rect x="0" y="0" width="48" height="24" rx="12" ry="12" fill="#d9534f" />
-                                          <text 
-                                            x="24" y="16" 
-                                            font-family="Helvetica, Arial, sans-serif" 
-                                            font-size="14" 
-                                            font-weight="700" 
-                                            fill="white" 
-                                            text-anchor="middle" 
-                                            dominant-baseline="middle"
-                                          >
-                                            NEW
-                                          </text>
+                                        <svg class="goods-exhibition-new-badge-svg" xmlns="http://www.w3.org/2000/svg" aria-label="NEW"
+                                            role="img" width="48" height="24" viewBox="0 0 48 24"
+                                            style="vertical-align:text-bottom; margin-left:0.3em; user-select:none; pointer-events:none;">
+                                            <rect x="0" y="0" width="48" height="24" rx="12" ry="12" fill="#d9534f" />
+                                            <text x="24" y="16" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700"
+                                                fill="white" text-anchor="middle" dominant-baseline="middle">
+                                                NEW
+                                            </text>
                                         </svg>
                                     <?php endif; ?>
                                 </h3>
                                 <div class="goods-exhibition-description"><?php echo wp_kses_post($product['description']); ?></div>
-                                <?php if (!empty($product['price'])) : ?>
+                                <?php if (!empty($product['price'])): ?>
                                     <div class="goods-exhibition-price"><?php echo esc_html($product['price']); ?></div>
                                 <?php endif; ?>
                             </div>
                             <div class="goods-exhibition-image-container">
-                                <img src="<?php echo esc_url($product['image_url']); ?>" alt="<?php echo esc_attr($product['name']); ?>" class="goods-exhibition-image">
+                                <img src="<?php echo esc_url($product['image_url']); ?>" alt="<?php echo esc_attr($product['name']); ?>"
+                                    loading="lazy" class="goods-exhibition-image">
                             </div>
                         </div>
                     <?php endif; ?>
