@@ -16,14 +16,22 @@ if (!defined('WPINC')) {
  * @param int $product_id 产品ID
  * @return array|null 产品信息或null
  */
-function goods_exhibition_get_product($product_id) {
+function goods_exhibition_get_product($product_id)
+{
     global $wpdb;
     $table_name = $wpdb->prefix . 'goods_exhibition';
 
-    return $wpdb->get_row(
-        $wpdb->prepare("SELECT * FROM $table_name WHERE id = %d", $product_id),
+    $result = $wpdb->get_row(
+        $wpdb->prepare("SELECT * FROM $table_name WHERE id = %d", intval($product_id)),
         ARRAY_A
     );
+
+    // 记录数据库错误
+    if ($wpdb->last_error) {
+        error_log('Goods Exhibition Plugin Error: ' . $wpdb->last_error);
+    }
+
+    return $result;
 }
 
 /**
@@ -32,16 +40,74 @@ function goods_exhibition_get_product($product_id) {
  * @param int $limit 限制数量，-1表示不限制
  * @return array 产品列表
  */
-function goods_exhibition_get_products($limit = -1) {
+function goods_exhibition_get_products($limit = -1, $force_refresh = false)
+{
+    global $wpdb;
+
+    // 确保 $limit 是整数
+    $limit = intval($limit);
+    $cache_key = 'goods_exhibition_all_products_' . $limit;
+
+    if (!$force_refresh) {
+        $cached = get_transient($cache_key);
+        if (false !== $cached) {
+            return $cached;
+        }
+    }
+
+    $table_name = $wpdb->prefix . 'goods_exhibition';
+
+    // 使用prepare防止SQL注入
+    if ($limit > 0) {
+        $results = $wpdb->get_results(
+            $wpdb->prepare("SELECT * FROM $table_name ORDER BY id DESC LIMIT %d", $limit),
+            ARRAY_A
+        );
+    } else {
+        $results = $wpdb->get_results(
+            "SELECT * FROM $table_name ORDER BY id DESC",
+            ARRAY_A
+        );
+    }
+
+    set_transient($cache_key, $results, 12 * HOUR_IN_SECONDS);
+    return $results;
+}
+
+/**
+ * 获取前端展示的所有产品（按类别排序）
+ *
+ * @param int $limit 限制数量
+ * @return array 产品列表
+ */
+function goods_exhibition_get_frontend_products($limit = -1)
+{
+    // 确保 $limit 是整数
+    $limit = intval($limit);
+    $cache_key = 'goods_exhibition_frontend_products_' . $limit;
+    $cached = get_transient($cache_key);
+    if (false !== $cached) {
+        return $cached;
+    }
+
     global $wpdb;
     $table_name = $wpdb->prefix . 'goods_exhibition';
 
-    $limit_clause = $limit > 0 ? "LIMIT $limit" : "";
+    // 使用prepare防止SQL注入
+    if ($limit > 0) {
+        $results = $wpdb->get_results(
+            $wpdb->prepare("SELECT * FROM {$table_name} ORDER BY category ASC, created_at DESC LIMIT %d", $limit),
+            ARRAY_A
+        );
+    } else {
+        $results = $wpdb->get_results(
+            "SELECT * FROM {$table_name} ORDER BY category ASC, created_at DESC",
+            ARRAY_A
+        );
+    }
 
-    return $wpdb->get_results(
-        "SELECT * FROM $table_name ORDER BY id DESC $limit_clause",
-        ARRAY_A
-    );
+    set_transient($cache_key, $results, 12 * HOUR_IN_SECONDS);
+    return $results;
 }
 
 /**
@@ -49,14 +115,24 @@ function goods_exhibition_get_products($limit = -1) {
  *
  * @return array
  */
-function goods_exhibition_get_poster_products() {
+function goods_exhibition_get_poster_products()
+{
+    $cache_key = 'goods_exhibition_poster_products';
+    $cached = get_transient($cache_key);
+    if (false !== $cached) {
+        return $cached;
+    }
+
     global $wpdb;
     $table_name = $wpdb->prefix . 'goods_exhibition';
 
-    return $wpdb->get_results(
+    $results = $wpdb->get_results(
         "SELECT * FROM $table_name WHERE is_poster = 1 AND poster_image_url != '' ORDER BY id DESC",
         ARRAY_A
     );
+
+    set_transient($cache_key, $results, 12 * HOUR_IN_SECONDS);
+    return $results;
 }
 
 /**
@@ -66,7 +142,8 @@ function goods_exhibition_get_poster_products() {
  * @param string $created_at 创建日期
  * @return bool 是否是新产品
  */
-function goods_exhibition_is_new_product($created_at) {
+function goods_exhibition_is_new_product($created_at)
+{
     $current_time = current_time('timestamp');
     $one_month_ago = strtotime('-1 month', $current_time);
 
@@ -79,7 +156,8 @@ function goods_exhibition_is_new_product($created_at) {
  * @param array $product 产品信息
  * @return string HTML代码
  */
-function goods_exhibition_get_product_image_html($product) {
+function goods_exhibition_get_product_image_html($product)
+{
     $html = '<div class="goods-exhibition-image-container">';
     $html .= '<img src="' . esc_url($product['image_url']) . '" alt="' . esc_attr($product['name']) . '" class="goods-exhibition-image">';
     $html .= '</div>';
@@ -91,7 +169,8 @@ function goods_exhibition_get_product_image_html($product) {
  *
  * @return bool 是否可写
  */
-function goods_exhibition_check_upload_dir() {
+function goods_exhibition_check_upload_dir()
+{
     $upload_dir = GOODS_EXHIBITION_UPLOAD_DIR;
 
     if (!file_exists($upload_dir)) {
@@ -107,18 +186,51 @@ function goods_exhibition_check_upload_dir() {
  * @param string $file_path 文件路径
  * @return bool 是否成功删除
  */
-function goods_exhibition_safe_delete_file($file_path) {
+function goods_exhibition_safe_delete_file($file_path)
+{
     // 确保文件在插件上传目录中
-    $upload_dir = GOODS_EXHIBITION_UPLOAD_DIR;
+    $upload_dir = realpath(GOODS_EXHIBITION_UPLOAD_DIR);
+    $real_file_path = realpath($file_path);
 
-    if (strpos($file_path, $upload_dir) !== 0) {
+    // 检查realpath是否成功（文件是否存在）
+    if ($real_file_path === false) {
         return false;
     }
 
-    if (file_exists($file_path)) {
-        return unlink($file_path);
+    // 使用realpath后的路径进行比较，防止路径遍历攻击
+    if (strpos($real_file_path, $upload_dir) !== 0) {
+        return false;
+    }
+
+    if (file_exists($real_file_path) && is_file($real_file_path)) {
+        return unlink($real_file_path);
     }
 
     return false;
+}
+
+/**
+ * 清除产品缓存
+ */
+function goods_exhibition_flush_cache()
+{
+    global $wpdb;
+
+    // 清除所有相关的transient缓存
+    // 使用数据库查询清除所有以特定前缀开头的transient
+    $wpdb->query(
+        $wpdb->prepare(
+            "DELETE FROM {$wpdb->options}
+            WHERE option_name LIKE %s
+            OR option_name LIKE %s",
+            $wpdb->esc_like('_transient_goods_exhibition_') . '%',
+            $wpdb->esc_like('_transient_timeout_goods_exhibition_') . '%'
+        )
+    );
+
+    // 如果使用对象缓存，也清除对象缓存
+    if (function_exists('wp_cache_flush_group')) {
+        wp_cache_flush_group('goods_exhibition');
+    }
 }
 
