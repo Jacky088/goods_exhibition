@@ -1,65 +1,216 @@
 /**
- * 好物页面插件前端脚本
+ * 好物页面插件前端脚本（Vanilla JS，无jQuery依赖）
  */
 
-(function ($) {
+(function () {
     'use strict';
 
-    $(document).ready(function () {
-        initGoodsExhibition();
-
-        // 阻止图片的默认查看行为，防止主题Lightbox等干扰弹窗
-        $('.goods-exhibition-image.no-lightbox').on('click', function (e) {
-            // 阻止事件冒泡，避免被外部绑定的图片查看事件捕获
-            e.stopPropagation();
-            // 如果第三方插件尝试阻止链接跳转，这里不preventDefault保证链接跳转正常
-        });
+    document.addEventListener('DOMContentLoaded', function () {
+        initProductSliders();
+        initPosterSlider();
+        initNoLightbox();
+        initMobilePeekHint();
     });
 
-    function initGoodsExhibition() {
-        $('.goods-exhibition-wrapper').each(function () {
-            var $wrapper = $(this);
-            var $slider = $wrapper.find('.goods-exhibition-slider');
-            var $items = $slider.find('.goods-exhibition-item');
-
-            // 使用第一个可见的商品宽度作为单个商品宽度（包含外边距）
-            // 注意：因为flex布局，有时outerWidth(true)取最近的一个即可
-            var itemWidth = $items.first().outerWidth(true);
-
-            // 左箭头点击事件，向左滚动一个item宽度
-            $wrapper.find('.goods-exhibition-arrow-left').on('click', function () {
-                $slider.animate({
-                    scrollLeft: $slider.scrollLeft() - itemWidth
-                }, 400);
+    /**
+     * 阻止图片的默认查看行为
+     */
+    function initNoLightbox() {
+        var images = document.querySelectorAll('.goods-exhibition-image.no-lightbox');
+        images.forEach(function (img) {
+            img.addEventListener('click', function (e) {
+                e.stopPropagation();
             });
+        });
+    }
 
-            // 右箭头点击事件，向右滚动一个item宽度
-            $wrapper.find('.goods-exhibition-arrow-right').on('click', function () {
-                $slider.animate({
-                    scrollLeft: $slider.scrollLeft() + itemWidth
-                }, 400);
-            });
+    /**
+     * 移动端滑动提示（Peek 动画）
+     * 首次加载时，商品列表轻微左移再弹回，暗示可横滑
+     */
+    function initMobilePeekHint() {
+        if (window.innerWidth > 480) return;
 
-            // 根据滚动位置显示/隐藏箭头
+        var sliders = document.querySelectorAll('.goods-exhibition-wrapper:not(.poster-slider) .goods-exhibition-slider');
+        sliders.forEach(function (slider) {
+            // 延迟 500ms 后播放 peek 动画
+            setTimeout(function () {
+                slider.classList.add('peek-hint');
+                // 动画结束后移除 class
+                slider.addEventListener('animationend', function () {
+                    slider.classList.remove('peek-hint');
+                }, { once: true });
+            }, 500);
+        });
+    }
+
+    /**
+     * 初始化商品列表滑动器（非海报）
+     */
+    function initProductSliders() {
+        var wrappers = document.querySelectorAll('.goods-exhibition-wrapper:not(.poster-slider)');
+
+        wrappers.forEach(function (wrapper) {
+            var slider = wrapper.querySelector('.goods-exhibition-slider');
+            if (!slider) return;
+
+            var items = slider.querySelectorAll('.goods-exhibition-item');
+            if (items.length === 0) return;
+
+            var leftArrow = wrapper.querySelector('.goods-exhibition-arrow-left');
+            var rightArrow = wrapper.querySelector('.goods-exhibition-arrow-right');
+
+            function getItemWidth() {
+                var itemStyle = window.getComputedStyle(items[0]);
+                return items[0].offsetWidth
+                    + parseInt(itemStyle.marginLeft, 10)
+                    + parseInt(itemStyle.marginRight, 10);
+            }
+
+            var itemWidth = getItemWidth();
+
+            if (leftArrow) {
+                leftArrow.addEventListener('click', function () {
+                    slider.scrollBy({ left: -itemWidth, behavior: 'smooth' });
+                });
+            }
+
+            if (rightArrow) {
+                rightArrow.addEventListener('click', function () {
+                    slider.scrollBy({ left: itemWidth, behavior: 'smooth' });
+                });
+            }
+
             function toggleArrows() {
-                var scrollLeft = $slider.scrollLeft();
-                var maxScroll = $slider[0].scrollWidth - $slider.outerWidth();
+                var scrollLeft = slider.scrollLeft;
+                var maxScroll = slider.scrollWidth - slider.offsetWidth;
 
-                if (scrollLeft <= 0) {
-                    $wrapper.find('.goods-exhibition-arrow-left').fadeOut(200);
-                } else {
-                    $wrapper.find('.goods-exhibition-arrow-left').fadeIn(200);
+                if (leftArrow) {
+                    leftArrow.style.visibility = scrollLeft <= 1 ? 'hidden' : 'visible';
                 }
-
-                if (scrollLeft >= maxScroll - 1) {
-                    $wrapper.find('.goods-exhibition-arrow-right').fadeOut(200);
-                } else {
-                    $wrapper.find('.goods-exhibition-arrow-right').fadeIn(200);
+                if (rightArrow) {
+                    rightArrow.style.visibility = scrollLeft >= maxScroll - 1 ? 'hidden' : 'visible';
                 }
             }
 
-            $slider.on('scroll', toggleArrows);
+            slider.addEventListener('scroll', toggleArrows);
             toggleArrows();
+
+            window.addEventListener('resize', function () {
+                itemWidth = getItemWidth();
+                toggleArrows();
+            });
         });
     }
-})(jQuery);
+
+    /**
+     * 初始化海报幻灯片：自动轮播 + 圆点指示器 + 箭头
+     */
+    function initPosterSlider() {
+        var wrapper = document.querySelector('.goods-exhibition-wrapper.poster-slider');
+        if (!wrapper) return;
+
+        var track = wrapper.querySelector('.poster-slider-track');
+        if (!track) return;
+
+        var items = track.querySelectorAll('.goods-exhibition-item.poster-item');
+        if (items.length <= 1) return; // 只有一张海报不需要轮播
+
+        var leftArrow = wrapper.querySelector('.goods-exhibition-arrow-left');
+        var rightArrow = wrapper.querySelector('.goods-exhibition-arrow-right');
+        var dots = wrapper.querySelectorAll('.goods-exhibition-dot');
+        var currentIndex = 0;
+        var autoPlayInterval = null;
+        var autoPlayDelay = 5000; // 5秒
+
+        /**
+         * 跳转到指定索引的海报
+         */
+        function goToSlide(index) {
+            if (index < 0) index = items.length - 1;
+            if (index >= items.length) index = 0;
+            currentIndex = index;
+
+            var slideWidth = items[0].offsetWidth;
+            track.scrollTo({ left: slideWidth * currentIndex, behavior: 'smooth' });
+
+            updateDots();
+        }
+
+        /**
+         * 更新圆点指示器状态
+         */
+        function updateDots() {
+            dots.forEach(function (dot, i) {
+                dot.classList.toggle('active', i === currentIndex);
+            });
+        }
+
+        /**
+         * 开始自动轮播
+         */
+        function startAutoPlay() {
+            stopAutoPlay();
+            autoPlayInterval = setInterval(function () {
+                goToSlide(currentIndex + 1);
+            }, autoPlayDelay);
+        }
+
+        /**
+         * 停止自动轮播
+         */
+        function stopAutoPlay() {
+            if (autoPlayInterval) {
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = null;
+            }
+        }
+
+        // 箭头点击
+        if (leftArrow) {
+            leftArrow.addEventListener('click', function () {
+                goToSlide(currentIndex - 1);
+                startAutoPlay(); // 点击后重置计时器
+            });
+        }
+
+        if (rightArrow) {
+            rightArrow.addEventListener('click', function () {
+                goToSlide(currentIndex + 1);
+                startAutoPlay();
+            });
+        }
+
+        // 圆点点击
+        dots.forEach(function (dot, i) {
+            dot.addEventListener('click', function () {
+                goToSlide(i);
+                startAutoPlay();
+            });
+        });
+
+        // 鼠标悬停暂停自动轮播
+        wrapper.addEventListener('mouseenter', stopAutoPlay);
+        wrapper.addEventListener('mouseleave', startAutoPlay);
+
+        // 触摸时暂停
+        wrapper.addEventListener('touchstart', stopAutoPlay, { passive: true });
+        wrapper.addEventListener('touchend', function () {
+            // 触摸结束后延迟恢复自动轮播
+            setTimeout(startAutoPlay, 2000);
+        });
+
+        // 初始化
+        updateDots();
+        startAutoPlay();
+
+        // 页面不可见时暂停，可见时恢复
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) {
+                stopAutoPlay();
+            } else {
+                startAutoPlay();
+            }
+        });
+    }
+})();

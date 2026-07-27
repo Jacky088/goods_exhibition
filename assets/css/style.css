@@ -5,7 +5,7 @@
 /* 分类标题居中，自适应布局 */
 .goods-exhibition-category-title {
     width: 100%;
-    max-width: 800px; /* 最大宽度，根据需要调整 */
+    max-width: 800px;
     margin: 40px auto 20px;
     font-weight: 700;
     font-size: 1.8rem;
@@ -15,7 +15,6 @@
     padding: 0 15px;
 }
 
-/* 响应式调整：小屏幕字体和间距缩小 */
 @media (max-width: 600px) {
     .goods-exhibition-category-title {
         font-size: 1.4rem;
@@ -29,7 +28,7 @@
     box-sizing: border-box;
 }
 
-/* 外层滑动容器和箭头：整体最大宽度及苹果风设计 */
+/* 外层滑动容器 */
 .goods-exhibition-wrapper {
     position: relative;
     max-width: 1200px;
@@ -47,21 +46,21 @@
     overflow-x: auto;
     scroll-behavior: smooth;
     padding-bottom: 8px;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
 }
 .goods-exhibition-slider::-webkit-scrollbar {
-    display: none; /* Chrome Safari */
+    display: none;
 }
 
 /* 商品卡片 */
 .goods-exhibition-item {
-    flex: 0 0 33.3333%; /* 一屏显示三个 */
+    flex: 0 0 33.3333%;
     margin: 0 12px;
     min-width: 280px;
     max-width: 360px;
     background: #fff;
-    border-radius: 24px;          /* 统一圆角 */
-    box-shadow: 0 14px 20px rgba(0, 0, 0, 0.06); /* 柔和阴影 */
+    border-radius: 24px;
+    box-shadow: 0 14px 20px rgba(0, 0, 0, 0.06);
     cursor: default;
     display: flex;
     flex-direction: column;
@@ -72,10 +71,11 @@
     color: inherit;
 }
 
-/* 有链接的商品容器用a包裹，需要设置为块元素和指针样式 */
+/* 有链接的卡片 */
 .goods-exhibition-item.has-link {
     cursor: pointer;
-    display: block;
+    display: flex;
+    flex-direction: column;
     text-decoration: none;
     color: inherit;
 }
@@ -83,6 +83,7 @@
 .goods-exhibition-item.has-link:focus {
     text-decoration: none;
 }
+
 /* 悬浮动画 */
 .goods-exhibition-item:hover {
     transform: translateY(-6px);
@@ -95,37 +96,44 @@
     flex-grow: 1;
 }
 
-/* 标题 - NEW标签位置回到右侧inline-flex */
+/* 标题 - 允许换行，不再截断 */
 .goods-exhibition-content > h3.goods-exhibition-title {
-    display: inline-flex !important;
+    display: flex !important;
     align-items: center !important;
-    gap: 0.5em !important;
+    flex-wrap: wrap !important;
+    gap: 0.4em !important;
     margin: 0 0 6px !important;
     font-weight: 700 !important;
-    font-size: 20px !important;
+    font-size: 18px !important;
     letter-spacing: -0.03em !important;
     color: #000 !important;
-    line-height: 1.2 !important;
-    white-space: nowrap !important;
+    line-height: 1.3 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
 }
 
-/* NEW标签内联SVG宽高固定 */
+/* NEW标签内联SVG */
 .goods-exhibition-new-badge-svg {
     display: inline-block !important;
     width: 48px !important;
     height: 24px !important;
     vertical-align: text-bottom !important;
-    margin-left: 0.3em !important;
+    flex-shrink: 0 !important;
     user-select: none !important;
     pointer-events: none !important;
 }
 
-/* 商品描述 */
+/* 商品描述 - 限制2行 + 省略号 */
 .goods-exhibition-description {
     font-size: 14px;
-    line-height: 1.4;
+    line-height: 1.5;
     color: #444;
     margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* 价格 */
@@ -133,59 +141,86 @@
     font-weight: 600;
     font-size: 16px;
     color: #666;
+    margin-bottom: 4px;
 }
 
-/* 图片容器和图片 */
+/* "了解更多"链接提示 */
+.goods-exhibition-more-link {
+    display: block;
+    font-size: 13px;
+    color: #0071e3;
+    margin-top: 6px;
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+.goods-exhibition-item:hover .goods-exhibition-more-link {
+    opacity: 1;
+}
+
+/* 图片容器 - 固定宽高比，统一卡片高度 */
 .goods-exhibition-image-container {
     padding: 0 20px 20px 20px;
     flex-shrink: 0;
     position: relative;
 }
 
-.goods-exhibition-image {
+.goods-exhibition-image-container .goods-exhibition-image {
     width: 100%;
-    height: auto;
-    object-fit: contain;
+    aspect-ratio: 1;
+    object-fit: cover;
     border-radius: 24px;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
     user-select: none;
+    background: #f5f5f7;
 }
 
-/* 箭头按钮 */
+/* ========================================
+   箭头按钮 - 渐显效果
+   ======================================== */
 .goods-exhibition-arrow {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.6);
     border: none;
     border-radius: 50%;
     width: 48px;
     height: 48px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     cursor: pointer;
-    color: #666;
+    color: #999;
     font-size: 24px;
     line-height: 1;
-    transition: background 0.3s ease, color 0.3s ease;
+    transition: background 0.3s ease, color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
     z-index: 10;
     display: flex;
     align-items: center;
     justify-content: center;
+    opacity: 0;
 }
+
+/* hover wrapper 时才显示箭头 */
+.goods-exhibition-wrapper:hover .goods-exhibition-arrow {
+    opacity: 1;
+}
+
 .goods-exhibition-arrow:hover {
-    background: #e5e5e7;
+    background: rgba(255, 255, 255, 0.95);
     color: #000;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 .goods-exhibition-arrow:focus {
     outline: none;
     box-shadow: 0 0 4px 2px rgba(0, 0, 0, 0.25);
+    opacity: 1;
 }
 
 .goods-exhibition-arrow-left {
-    left: 0;
+    left: 8px;
 }
 .goods-exhibition-arrow-right {
-    right: 0;
+    right: 8px;
 }
 
 /* 空状态 */
@@ -199,7 +234,7 @@
 /* 平板端: 显示2个商品 */
 @media (max-width: 1024px) and (min-width: 481px) {
     .goods-exhibition-item {
-        flex: 0 0 50%; /* 显示2个 */
+        flex: 0 0 50%;
         min-width: auto;
         max-width: none;
         margin: 0 12px;
@@ -212,17 +247,411 @@
         padding: 20px 10px;
     }
     .goods-exhibition-item {
-        flex: 0 0 66.6667%; /* 约2/3屏宽，显示1.5个 */
+        flex: 0 0 72%;
         min-width: auto;
         max-width: none;
         margin: 0 8px 0 0;
     }
     .goods-exhibition-arrow {
-        display: none; /* 手机端隐藏箭头 */
+        display: none !important;
     }
 }
 
-/* 强制限制外层容器，防止溢出或缩放 */
-.goods-exhibition-title {
-    overflow: visible !important;
+/* ========================================
+   海报幻灯片样式
+   ======================================== */
+
+/* 海报容器 - 完全覆盖基础wrapper样式，无padding、无背景色间距 */
+.goods-exhibition-wrapper.poster-slider {
+    margin: 0 auto;
+    padding: 0;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    background: #fff;
+}
+
+.goods-exhibition-wrapper.poster-slider .poster-inner {
+    position: relative;
+    overflow: hidden;
+}
+
+/* 海报滑动轨道 - 覆盖基础slider的padding */
+.goods-exhibition-wrapper.poster-slider .poster-slider-track {
+    display: flex;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    padding: 0;
+}
+
+/* 海报卡片 - 上图下文布局 */
+.goods-exhibition-wrapper.poster-slider .goods-exhibition-item.poster-item {
+    flex: 0 0 100%;
+    max-width: 100%;
+    min-width: 100%;
+    margin: 0;
+    border-radius: 0;
+    overflow: hidden;
+    box-shadow: none;
+    transition: none;
+    display: flex;
+    flex-direction: column;
+}
+
+.goods-exhibition-wrapper.poster-slider .goods-exhibition-item.poster-item:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* 海报图片容器 - 固定宽高比，强制裁切铺满 */
+.goods-exhibition-poster-img-wrap {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 33.33%; /* 3:1 宽高比 */
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+/* 海报图片 - 绝对定位铺满容器 */
+.goods-exhibition-poster-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    user-select: none;
+    display: block;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* 海报文字 - 叠加在图片底部 */
+.goods-exhibition-wrapper.poster-slider .goods-exhibition-content.poster-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 24px;
+    background: linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%);
+    text-shadow: none;
+    max-width: none;
+    border-radius: 0;
+    backdrop-filter: none;
+    z-index: 10;
+}
+
+.goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-title {
+    color: #fff !important;
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+    flex-shrink: 0;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+.goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-description {
+    font-size: 1.1rem;
+    margin: 0;
+    color: rgba(255,255,255,0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-line-clamp: unset;
+    display: block;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+.goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-price {
+    font-weight: 600;
+    font-size: 1.2rem;
+    color: #ff6b4a;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: auto;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* 海报箭头 - 定位在图片区域垂直居中 */
+.goods-exhibition-wrapper.poster-slider .goods-exhibition-arrow {
+    z-index: 20;
+    opacity: 0;
+    background: rgba(255, 255, 255, 0.85);
+    top: 50%;
+    transform: translateY(-100%);
+}
+.goods-exhibition-wrapper.poster-slider:hover .goods-exhibition-arrow {
+    opacity: 1;
+}
+
+/* ========================================
+   海报圆点指示器 - 在图片底部文字区域内
+   ======================================== */
+.goods-exhibition-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 7px;
+    padding: 0;
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 15;
+    background: transparent;
+}
+
+.goods-exhibition-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.goods-exhibition-dot.active {
+    background: #fff;
+    transform: scale(1.25);
+}
+
+.goods-exhibition-dot:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* ========================================
+   手机端海报响应式
+   ======================================== */
+@media (max-width: 480px) {
+    .goods-exhibition-wrapper.poster-slider .poster-content {
+        padding: 10px 14px;
+        gap: 8px;
+    }
+
+    .goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-title {
+        font-size: 1.1rem !important;
+    }
+
+    .goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-description {
+        display: none;
+    }
+
+    .goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-price {
+        font-size: 1rem !important;
+    }
+
+    .goods-exhibition-wrapper.poster-slider .goods-exhibition-arrow {
+        display: none !important;
+    }
+
+    .goods-exhibition-poster-img-wrap {
+        padding-bottom: 45%;
+    }
+
+    .goods-exhibition-dots {
+        bottom: 12px;
+    }
+
+    .goods-exhibition-dot {
+        width: 5px;
+        height: 5px;
+    }
+}
+
+/* ========================================
+   移动端滑动提示（Peek 动画）
+   ======================================== */
+@keyframes goods-exhibition-peek {
+    0% { transform: translateX(0); }
+    40% { transform: translateX(-20px); }
+    100% { transform: translateX(0); }
+}
+
+.goods-exhibition-slider.peek-hint {
+    animation: goods-exhibition-peek 0.8s ease-out 1;
+}
+
+/* ========================================
+   夜间模式 / Dark Mode
+   支持 prefers-color-scheme 和常见主题 dark class
+   ======================================== */
+@media (prefers-color-scheme: dark) {
+    /* 分类标题 */
+    .goods-exhibition-category-title {
+        color: #f0f0f0;
+    }
+
+    /* 商品滑动容器 */
+    .goods-exhibition-wrapper {
+        background-color: #1c1c1e;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    /* 商品卡片 */
+    .goods-exhibition-item {
+        background: #2c2c2e;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+    }
+    .goods-exhibition-item:hover {
+        box-shadow: 0 20px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    /* 标题 */
+    .goods-exhibition-content > h3.goods-exhibition-title {
+        color: #f0f0f0 !important;
+    }
+
+    /* 描述 */
+    .goods-exhibition-description {
+        color: #a1a1a6;
+    }
+
+    /* 价格 */
+    .goods-exhibition-price {
+        color: #b0b0b5;
+    }
+
+    /* 了解更多 */
+    .goods-exhibition-more-link {
+        color: #64b5f6;
+    }
+
+    /* 图片容器背景 */
+    .goods-exhibition-image-container .goods-exhibition-image {
+        background: #3a3a3c;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    /* 箭头按钮 */
+    .goods-exhibition-arrow {
+        background: rgba(60, 60, 60, 0.8);
+        color: #ccc;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+    .goods-exhibition-arrow:hover {
+        background: rgba(80, 80, 80, 0.95);
+        color: #fff;
+    }
+
+    /* 空状态 */
+    .goods-exhibition-empty {
+        color: #8e8e93;
+    }
+
+    /* 海报容器 */
+    .goods-exhibition-wrapper.poster-slider {
+        background: #1c1c1e;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    /* 海报箭头 */
+    .goods-exhibition-wrapper.poster-slider .goods-exhibition-arrow {
+        background: rgba(60, 60, 60, 0.85);
+        color: #ddd;
+    }
+
+    /* 链接色保持不变（已是白色/高亮色） */
+}
+
+/* 兼容常见主题的 dark mode class */
+body.dark-mode .goods-exhibition-category-title,
+body[data-theme="dark"] .goods-exhibition-category-title,
+.dark .goods-exhibition-category-title {
+    color: #f0f0f0;
+}
+
+body.dark-mode .goods-exhibition-wrapper,
+body[data-theme="dark"] .goods-exhibition-wrapper,
+.dark .goods-exhibition-wrapper {
+    background-color: #1c1c1e;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .goods-exhibition-item,
+body[data-theme="dark"] .goods-exhibition-item,
+.dark .goods-exhibition-item {
+    background: #2c2c2e;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+}
+
+body.dark-mode .goods-exhibition-item:hover,
+body[data-theme="dark"] .goods-exhibition-item:hover,
+.dark .goods-exhibition-item:hover {
+    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .goods-exhibition-content > h3.goods-exhibition-title,
+body[data-theme="dark"] .goods-exhibition-content > h3.goods-exhibition-title,
+.dark .goods-exhibition-content > h3.goods-exhibition-title {
+    color: #f0f0f0 !important;
+}
+
+body.dark-mode .goods-exhibition-description,
+body[data-theme="dark"] .goods-exhibition-description,
+.dark .goods-exhibition-description {
+    color: #a1a1a6;
+}
+
+body.dark-mode .goods-exhibition-price,
+body[data-theme="dark"] .goods-exhibition-price,
+.dark .goods-exhibition-price {
+    color: #b0b0b5;
+}
+
+body.dark-mode .goods-exhibition-more-link,
+body[data-theme="dark"] .goods-exhibition-more-link,
+.dark .goods-exhibition-more-link {
+    color: #64b5f6;
+}
+
+body.dark-mode .goods-exhibition-image-container .goods-exhibition-image,
+body[data-theme="dark"] .goods-exhibition-image-container .goods-exhibition-image,
+.dark .goods-exhibition-image-container .goods-exhibition-image {
+    background: #3a3a3c;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .goods-exhibition-arrow,
+body[data-theme="dark"] .goods-exhibition-arrow,
+.dark .goods-exhibition-arrow {
+    background: rgba(60, 60, 60, 0.8);
+    color: #ccc;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .goods-exhibition-arrow:hover,
+body[data-theme="dark"] .goods-exhibition-arrow:hover,
+.dark .goods-exhibition-arrow:hover {
+    background: rgba(80, 80, 80, 0.95);
+    color: #fff;
+}
+
+body.dark-mode .goods-exhibition-wrapper.poster-slider,
+body[data-theme="dark"] .goods-exhibition-wrapper.poster-slider,
+.dark .goods-exhibition-wrapper.poster-slider {
+    background: #1c1c1e;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .goods-exhibition-wrapper.poster-slider .goods-exhibition-arrow,
+body[data-theme="dark"] .goods-exhibition-wrapper.poster-slider .goods-exhibition-arrow,
+.dark .goods-exhibition-wrapper.poster-slider .goods-exhibition-arrow {
+    background: rgba(60, 60, 60, 0.85);
+    color: #ddd;
+}
+
+body.dark-mode .goods-exhibition-empty,
+body[data-theme="dark"] .goods-exhibition-empty,
+.dark .goods-exhibition-empty {
+    color: #8e8e93;
 }

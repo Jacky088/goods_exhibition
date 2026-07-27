@@ -2,9 +2,258 @@
  * 好物页面插件管理界面样式
  */
 
-/* 产品表单样式 */
-.goods-exhibition-admin-form {
-    max-width: 800px;
+/* 页面大标题 */
+.goods-exhibition-admin-title {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 20px 0 15px;
+    padding: 0;
+    line-height: 1.3;
+    color: #1d2327;
+}
+
+/* 分页卡导航 */
+.goods-exhibition-tabs {
+    margin-bottom: 20px;
+}
+
+/* Tab 内容区域 */
+.goods-exhibition-tab-content {
+    margin-top: 15px;
+}
+
+/* ========================================
+   搜索和筛选工具栏
+   ======================================== */
+.goods-exhibition-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.goods-exhibition-search-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.goods-exhibition-search-input {
+    width: 220px;
+    padding: 4px 10px;
+}
+
+.goods-exhibition-filter-select {
+    padding: 4px 8px;
+}
+
+.goods-exhibition-product-count {
+    margin: 0;
+    color: #50575e;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+/* ========================================
+   产品列表表格 - 紧凑布局
+   ======================================== */
+.goods-exhibition-table {
+    border-collapse: collapse;
+}
+
+.goods-exhibition-table th,
+.goods-exhibition-table td {
+    vertical-align: middle;
+    padding: 8px 6px;
+}
+
+/* 列宽设定 */
+.goods-exhibition-table .check-column {
+    width: 35px;
+    padding: 8px 4px;
+}
+
+.goods-exhibition-table .column-thumb {
+    width: 55px;
+}
+
+.goods-exhibition-table .column-name {
+    width: 15%;
+}
+
+.goods-exhibition-table .column-desc {
+    width: 20%;
+}
+
+.goods-exhibition-table .column-price {
+    width: 12%;
+}
+
+.goods-exhibition-table .column-category {
+    width: 10%;
+}
+
+.goods-exhibition-table .column-tags {
+    width: 10%;
+}
+
+.goods-exhibition-table .column-link {
+    width: 5%;
+    text-align: center;
+}
+
+.goods-exhibition-table .column-date {
+    width: 10%;
+}
+
+.goods-exhibition-table .column-actions {
+    width: 10%;
+    white-space: nowrap;
+}
+
+/* 缩略图 - 紧凑 */
+.goods-exhibition-table .column-thumb img {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    display: block;
+}
+
+.goods-no-image {
+    display: inline-block;
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+    text-align: center;
+    background: #f0f0f1;
+    border-radius: 6px;
+    color: #999;
+    font-size: 12px;
+}
+
+/* 名称加粗 */
+.goods-exhibition-table .column-name strong {
+    font-weight: 600;
+    color: #1d2327;
+}
+
+/* 描述文字 */
+.goods-exhibition-table .column-desc {
+    color: #646970;
+    font-size: 12px;
+}
+
+/* 类别徽章 */
+.goods-category-badge {
+    display: inline-block;
+    background: #f0f0f1;
+    color: #50575e;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+/* 标记标签 */
+.goods-tag {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 3px;
+}
+
+.goods-tag-new {
+    background: #fce4e4;
+    color: #d63638;
+}
+
+.goods-tag-poster {
+    background: #e7f0fd;
+    color: #2271b1;
+}
+
+.goods-tag-none {
+    color: #c3c4c7;
+}
+
+/* 链接图标 */
+.goods-exhibition-table .column-link a {
+    text-decoration: none;
+    font-size: 16px;
+}
+
+/* 操作链接 */
+.goods-action-link {
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.goods-action-link:hover {
+    text-decoration: underline;
+}
+
+.goods-action-delete {
+    color: #b32d2e;
+}
+
+.goods-action-delete:hover {
+    color: #a00;
+}
+
+.goods-action-sep {
+    color: #c3c4c7;
+    margin: 0 2px;
+}
+
+/* 批量删除按钮 */
+.goods-exhibition-bulk-delete-btn {
+    color: #b32d2e;
+    border-color: #b32d2e;
+}
+
+.goods-exhibition-bulk-delete-btn:hover:not(:disabled) {
+    background: #b32d2e;
+    color: #fff;
+    border-color: #b32d2e;
+}
+
+.goods-exhibition-bulk-delete-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.goods-exhibition-selected-count {
+    font-size: 12px;
+    color: #646970;
+    margin-left: 8px;
+}
+
+/* ========================================
+   表单样式
+   ======================================== */
+
+/* 必填项星号 */
+.form-table th .required {
+    color: #dc3232;
+    font-weight: 700;
+    margin-left: 2px;
+}
+
+/* 表单字段样式 */
+.form-table th {
+    width: 150px;
+}
+
+/* 媒体上传按钮 */
+#upload_image_button {
+    margin-right: 10px;
 }
 
 /* 图片预览容器 */
@@ -20,37 +269,9 @@
     max-height: 200px;
 }
 
-/* 表单字段样式 */
-.form-table th {
-    width: 150px;
-}
-
-/* 媒体上传按钮 */
-#upload_image_button {
-    margin-right: 10px;
-}
-
 /* 文件上传字段 */
 input[type="file"] {
     margin: 10px 0;
-}
-
-/* 产品列表表格 */
-.wp-list-table .column-image {
-    width: 120px;
-}
-
-.wp-list-table img {
-    max-width: 100px;
-    max-height: 100px;
-    border: 1px solid #ddd;
-    padding: 2px;
-    background: #fff;
-}
-
-/* 操作按钮 */
-.wp-list-table .button-small {
-    margin-right: 5px;
 }
 
 /* 提示信息 */
@@ -73,4 +294,151 @@ input[type="file"] {
     .form-table th {
         width: auto;
     }
+
+    .goods-exhibition-admin-title {
+        font-size: 22px;
+    }
+
+    .goods-exhibition-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .goods-exhibition-search-input {
+        width: 160px;
+    }
+}
+
+/* ========================================
+   分类管理页面
+   ======================================== */
+.goods-exhibition-categories-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 30px;
+    align-items: start;
+}
+
+.goods-exhibition-cat-add {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+}
+
+.goods-exhibition-cat-add .regular-text {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.goods-exhibition-cat-add h3 {
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.goods-cat-field {
+    margin-bottom: 15px;
+}
+
+.goods-cat-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    font-size: 13px;
+}
+
+.goods-cat-field .required {
+    color: #dc3232;
+}
+
+.goods-exhibition-cat-list h3 {
+    margin-top: 0;
+}
+
+/* 编辑弹窗 */
+#goods-cat-edit-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.goods-cat-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.goods-cat-modal-content {
+    position: relative;
+    background: #fff;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    width: 400px;
+    max-width: 90vw;
+}
+
+.goods-cat-modal-content h3 {
+    margin-top: 0;
+}
+
+/* 响应式 */
+@media screen and (max-width: 782px) {
+    .goods-exhibition-categories-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ========================================
+   拖动排序
+   ======================================== */
+.goods-drag-handle {
+    cursor: grab;
+    font-size: 16px;
+    color: #999;
+    user-select: none;
+    display: inline-block;
+    padding: 2px 4px;
+}
+
+.goods-drag-handle:hover {
+    color: #333;
+}
+
+.goods-drag-handle:active {
+    cursor: grabbing;
+}
+
+.goods-sort-placeholder {
+    background: #e8f4fd !important;
+    height: 50px;
+    border: 2px dashed #2271b1;
+}
+
+.goods-sort-hint {
+    font-size: 12px;
+    color: #2271b1;
+    font-weight: 500;
+}
+
+.goods-sort-notice {
+    margin: 10px 0;
+}
+
+/* 批量移动 */
+#goods-bulk-move-btn:disabled,
+#goods-bulk-move-category:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

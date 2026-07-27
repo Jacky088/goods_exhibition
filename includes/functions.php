@@ -96,12 +96,12 @@ function goods_exhibition_get_frontend_products($limit = -1)
     // 使用prepare防止SQL注入
     if ($limit > 0) {
         $results = $wpdb->get_results(
-            $wpdb->prepare("SELECT * FROM {$table_name} ORDER BY category ASC, created_at DESC LIMIT %d", $limit),
+            $wpdb->prepare("SELECT * FROM {$table_name} ORDER BY category ASC, sort_order ASC, created_at DESC LIMIT %d", $limit),
             ARRAY_A
         );
     } else {
         $results = $wpdb->get_results(
-            "SELECT * FROM {$table_name} ORDER BY category ASC, created_at DESC",
+            "SELECT * FROM {$table_name} ORDER BY category ASC, sort_order ASC, created_at DESC",
             ARRAY_A
         );
     }
@@ -144,7 +144,7 @@ function goods_exhibition_get_poster_products()
  */
 function goods_exhibition_is_new_product($created_at)
 {
-    $current_time = current_time('timestamp');
+    $current_time = current_datetime()->getTimestamp();
     $one_month_ago = strtotime('-1 month', $current_time);
 
     return strtotime($created_at) > $one_month_ago;
@@ -214,19 +214,16 @@ function goods_exhibition_safe_delete_file($file_path)
  */
 function goods_exhibition_flush_cache()
 {
-    global $wpdb;
+    // 清除已知的 transient 缓存键
+    delete_transient('goods_exhibition_poster_products');
+    delete_transient('goods_exhibition_frontend_products_-1');
+    delete_transient('goods_exhibition_all_products_-1');
 
-    // 清除所有相关的transient缓存
-    // 使用数据库查询清除所有以特定前缀开头的transient
-    $wpdb->query(
-        $wpdb->prepare(
-            "DELETE FROM {$wpdb->options}
-            WHERE option_name LIKE %s
-            OR option_name LIKE %s",
-            $wpdb->esc_like('_transient_goods_exhibition_') . '%',
-            $wpdb->esc_like('_transient_timeout_goods_exhibition_') . '%'
-        )
-    );
+    // 清除可能带有 limit 参数的缓存（常见值）
+    for ($i = 1; $i <= 100; $i++) {
+        delete_transient('goods_exhibition_all_products_' . $i);
+        delete_transient('goods_exhibition_frontend_products_' . $i);
+    }
 
     // 如果使用对象缓存，也清除对象缓存
     if (function_exists('wp_cache_flush_group')) {
