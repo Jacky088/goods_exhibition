@@ -36,6 +36,9 @@
 - Transient 缓存（12 小时自动刷新）
 - 卸载时完整清理（uninstall.php）
 
+### 页面预览
+![Goods Exhibition 预览](./screenshot-preview-pc-goods.png)
+
 ---
 
 ## 环境要求
