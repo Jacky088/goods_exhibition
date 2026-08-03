@@ -274,6 +274,7 @@
 .goods-exhibition-wrapper.poster-slider .poster-inner {
     position: relative;
     overflow: hidden;
+    min-height: 0;
 }
 
 /* 海报滑动轨道 - 覆盖基础slider的padding */
@@ -300,6 +301,7 @@
     transition: none;
     display: flex;
     flex-direction: column;
+    min-height: 0;
 }
 
 .goods-exhibition-wrapper.poster-slider .goods-exhibition-item.poster-item:hover {
@@ -315,18 +317,21 @@
     overflow: hidden;
     flex-shrink: 0;
     min-height: 0;
+    min-width: 0;
 }
 
 /* 海报图片 - 绝对定位铺满容器 */
 .goods-exhibition-poster-img {
     position: absolute;
     inset: 0;
+    display: block;
     width: 100%;
     height: 100%;
+    min-width: 0;
+    max-width: none;
     object-fit: cover;
     object-position: center;
     user-select: none;
-    display: block;
     border-radius: 0;
     box-shadow: none;
     padding: 0;
@@ -460,6 +465,15 @@
     .goods-exhibition-poster-img-wrap {
         aspect-ratio: 3 / 1;
         min-height: 180px;
+    }
+
+    .goods-exhibition-wrapper.poster-slider .goods-exhibition-poster-img {
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        max-width: none;
+        object-fit: cover;
+        object-position: center;
     }
 
     .goods-exhibition-dots {
