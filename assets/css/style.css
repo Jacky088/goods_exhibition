@@ -279,13 +279,17 @@
 /* 海报滑动轨道 - 覆盖基础slider的padding */
 .goods-exhibition-wrapper.poster-slider .poster-slider-track {
     display: flex;
-    overflow-x: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
     padding: 0;
+    touch-action: pan-x;
 }
 
-/* 海报卡片 - 上图下文布局 */
 .goods-exhibition-wrapper.poster-slider .goods-exhibition-item.poster-item {
+    scroll-snap-align: start;
     flex: 0 0 100%;
     max-width: 100%;
     min-width: 100%;

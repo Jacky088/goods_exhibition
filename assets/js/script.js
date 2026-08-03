@@ -166,6 +166,28 @@
             }
         }
 
+        /**
+         * 根据滚动位置更新当前索引和圆点状态
+         */
+        function updateIndexFromScroll() {
+            var slideWidth = items[0].offsetWidth;
+            var index = Math.round(track.scrollLeft / slideWidth);
+            if (index < 0) index = 0;
+            if (index >= items.length) index = items.length - 1;
+            if (index !== currentIndex) {
+                currentIndex = index;
+                updateDots();
+            }
+        }
+
+        var scrollTimeout = null;
+        track.addEventListener('scroll', function () {
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+            scrollTimeout = setTimeout(updateIndexFromScroll, 80);
+        });
+
         // 箭头点击
         if (leftArrow) {
             leftArrow.addEventListener('click', function () {
