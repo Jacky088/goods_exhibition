@@ -40,6 +40,18 @@ register_activation_hook(__FILE__, 'goods_exhibition_activate');
 register_deactivation_hook(__FILE__, 'goods_exhibition_deactivate');
 
 /**
+ * 在插件列表的"停用"链接旁边添加一个"设置"入口
+ */
+function goods_exhibition_plugin_action_links($links)
+{
+    $settings_url = admin_url('admin.php?page=goods-exhibition');
+    $settings_link = '<a href="' . esc_url($settings_url) . '">' . esc_html__('设置', 'goods-exhibition') . '</a>';
+    $links['settings'] = $settings_link;
+    return $links;
+}
+add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'goods_exhibition_plugin_action_links');
+
+/**
  * 插件激活时执行的函数 - 新增 price、category、is_poster、poster_image_url 字段
  */
 function goods_exhibition_activate()
