@@ -175,7 +175,10 @@ function goods_exhibition_render_product_list_tab()
     $total_pages = ceil($total_items / $per_page);
 
     // 获取所有类别用于筛选下拉菜单
-    $all_categories = $wpdb->get_col("SELECT DISTINCT category FROM `{$table_name}` WHERE category != '' ORDER BY category ASC");
+    // 数据源：分类表 goods_exhibition_categories（而非产品表的 DISTINCT category），
+    // 否则新增但尚未关联产品的分类不会出现在筛选下拉中。
+    $categories_table = $wpdb->prefix . 'goods_exhibition_categories';
+    $all_categories = $wpdb->get_col("SELECT name FROM `{$categories_table}` ORDER BY sort_order ASC, name ASC");
 
     // 构建分页基础URL
     $base_url_params = array('page' => 'goods-exhibition', 'tab' => 'list');

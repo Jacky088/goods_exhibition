@@ -46,7 +46,7 @@ function goods_exhibition_get_products($limit = -1, $force_refresh = false)
 
     // 确保 $limit 是整数
     $limit = intval($limit);
-    $cache_key = 'goods_exhibition_all_products_' . $limit;
+    $cache_key = 'goods_exhibition_all_products_' . goods_exhibition_cache_version() . '_' . $limit;
 
     if (!$force_refresh) {
         $cached = get_transient($cache_key);
@@ -84,7 +84,7 @@ function goods_exhibition_get_frontend_products($limit = -1)
 {
     // 确保 $limit 是整数
     $limit = intval($limit);
-    $cache_key = 'goods_exhibition_frontend_products_' . $limit;
+    $cache_key = 'goods_exhibition_frontend_products_' . goods_exhibition_cache_version() . '_' . $limit;
     $cached = get_transient($cache_key);
     if (false !== $cached) {
         return $cached;
@@ -117,7 +117,7 @@ function goods_exhibition_get_frontend_products($limit = -1)
  */
 function goods_exhibition_get_poster_products()
 {
-    $cache_key = 'goods_exhibition_poster_products';
+    $cache_key = 'goods_exhibition_poster_products_' . goods_exhibition_cache_version();
     $cached = get_transient($cache_key);
     if (false !== $cached) {
         return $cached;
@@ -174,7 +174,19 @@ function goods_exhibition_check_upload_dir()
     $upload_dir = GOODS_EXHIBITION_UPLOAD_DIR;
 
     if (!file_exists($upload_dir)) {
-        return wp_mkdir_p($upload_dir);
+        if (!wp_mkdir_p($upload_dir)) {
+            return false;
+        }
+    }
+
+    // 确保 .htaccess 保护存在（防止上传文件被当作脚本执行）
+    $htaccess_file = $upload_dir . '.htaccess';
+    if (!file_exists($htaccess_file)) {
+        $content = "Options -Indexes\n";
+        $content .= "<FilesMatch \"\\.(?i:php|phtml|php3|php4|php5|phar|cgi|pl|py|asp|aspx|jsp|sh)$\">\n";
+        $content .= "    Require all denied\n";
+        $content .= "</FilesMatch>\n";
+        @file_put_contents($htaccess_file, $content);
     }
 
     return is_writable($upload_dir);
@@ -210,20 +222,33 @@ function goods_exhibition_safe_delete_file($file_path)
 }
 
 /**
+ * 获取当前缓存版本号
+ *
+ * 通过递增版本号即可让所有带版本前缀的 transient 整体失效，
+ * 避免逐个删除缓存键带来的性能开销，也解决了 limit > 100 时缓存无法清除的问题。
+ *
+ * @return int 当前缓存版本
+ */
+function goods_exhibition_cache_version()
+{
+    $version = (int) get_option('goods_exhibition_cache_version', 0);
+    if ($version < 1) {
+        $version = 1;
+        update_option('goods_exhibition_cache_version', $version);
+    }
+    return $version;
+}
+
+/**
  * 清除产品缓存
+ *
+ * 通过递增缓存版本号使所有带版本前缀的 transient 立即整体失效，
+ * 一次性操作代替原先逐个删除 200 个键的暴力循环。
  */
 function goods_exhibition_flush_cache()
 {
-    // 清除已知的 transient 缓存键
-    delete_transient('goods_exhibition_poster_products');
-    delete_transient('goods_exhibition_frontend_products_-1');
-    delete_transient('goods_exhibition_all_products_-1');
-
-    // 清除可能带有 limit 参数的缓存（常见值）
-    for ($i = 1; $i <= 100; $i++) {
-        delete_transient('goods_exhibition_all_products_' . $i);
-        delete_transient('goods_exhibition_frontend_products_' . $i);
-    }
+    $version = (int) get_option('goods_exhibition_cache_version', 0);
+    update_option('goods_exhibition_cache_version', $version + 1);
 
     // 如果使用对象缓存，也清除对象缓存
     if (function_exists('wp_cache_flush_group')) {

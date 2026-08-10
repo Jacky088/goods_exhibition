@@ -3,7 +3,7 @@
  * Plugin Name: 好物页面插件
  * Plugin URI: https://github.com/Jacky088/goods_exhibition
  * Description: 一个展示好物商品的WordPress插件（已通过安全审查和优化）
- * Version: 1.3.1
+ * Version: 1.3.2
  * Author: 木木
  * Author URI: https://github.com/Jacky088/goods_exhibition
  * License: GPL v2 or later
@@ -19,7 +19,7 @@ if (!defined('WPINC')) {
 }
 
 // 定义插件版本
-define('GOODS_EXHIBITION_VERSION', '1.3.1');
+define('GOODS_EXHIBITION_VERSION', '1.3.2');
 // 定义插件路径
 define('GOODS_EXHIBITION_PATH', plugin_dir_path(__FILE__));
 // 定义插件URL
@@ -48,48 +48,10 @@ function goods_exhibition_activate()
     $charset_collate = $wpdb->get_charset_collate();
     $table_name = $wpdb->prefix . 'goods_exhibition';
 
-    // 检查category字段是否存在
-    $column = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM `{$table_name}` LIKE %s", 'category'));
-    if (empty($column)) {
-        $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN `category` varchar(255) NOT NULL DEFAULT '' AFTER `url`");
-    }
+    // 首先创建完整表结构（首次激活或升级）。
+    // dbDelta 会自动补齐旧表中缺失的列，因此无需在前面用 ALTER 预先建表。
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
-    // 检查is_poster字段是否存在
-    $column_poster = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM `{$table_name}` LIKE %s", 'is_poster'));
-    if (empty($column_poster)) {
-        $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN `is_poster` tinyint(1) DEFAULT 0 NOT NULL AFTER `is_new`");
-    }
-
-    // 检查poster_image_url字段是否存在
-    $column_poster_image = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM `{$table_name}` LIKE %s", 'poster_image_url'));
-    if (empty($column_poster_image)) {
-        $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN `poster_image_url` varchar(255) DEFAULT '' NOT NULL AFTER `is_poster`");
-    }
-
-    // 检查sort_order字段是否存在
-    $column_sort = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM `{$table_name}` LIKE %s", 'sort_order'));
-    if (empty($column_sort)) {
-        $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN `sort_order` int DEFAULT 0 NOT NULL AFTER `poster_image_url`");
-    }
-
-    // 添加索引
-    $indices = array(
-        'category_idx' => 'category',
-        'is_poster_idx' => 'is_poster',
-        'is_new_idx' => 'is_new'
-    );
-
-    foreach ($indices as $index_name => $column_name) {
-        $index_exists = $wpdb->get_results(
-            $wpdb->prepare("SHOW INDEX FROM `{$table_name}` WHERE Key_name = %s", $index_name)
-        );
-        if (empty($index_exists)) {
-            // $column_name 和 $index_name 来自硬编码数组，安全可控
-            $wpdb->query("ALTER TABLE `{$table_name}` ADD INDEX `{$index_name}` (`{$column_name}`)");
-        }
-    }
-
-    // 创建表结构（首次激活或升级）
     $sql = "CREATE TABLE $table_name (
         id mediumint(9) NOT NULL AUTO_INCREMENT,
         name varchar(255) NOT NULL,
@@ -107,8 +69,23 @@ function goods_exhibition_activate()
         PRIMARY KEY (id)
     ) $charset_collate;";
 
-    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql);
+
+    // 补齐可能缺失的索引（dbDelta 对索引的处理不完整，旧版升级时手动补回）
+    $indices = array(
+        'category_idx' => 'category',
+        'is_poster_idx' => 'is_poster',
+        'is_new_idx' => 'is_new'
+    );
+    foreach ($indices as $index_name => $column_name) {
+        $index_exists = $wpdb->get_results(
+            $wpdb->prepare("SHOW INDEX FROM `{$table_name}` WHERE Key_name = %s", $index_name)
+        );
+        if (empty($index_exists)) {
+            // $column_name 和 $index_name 来自硬编码数组，安全可控
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD INDEX `{$index_name}` (`{$column_name}`)");
+        }
+    }
 
     // 创建分类表
     $categories_table = $wpdb->prefix . 'goods_exhibition_categories';
@@ -134,6 +111,9 @@ function goods_exhibition_activate()
         }
     }
 
+    // 创建上传目录并写入 .htaccess 保护（防止直接执行上传文件）
+    goods_exhibition_ensure_upload_protection();
+
     // 添加插件版本号选项
     add_option('goods_exhibition_version', GOODS_EXHIBITION_VERSION);
 }
@@ -144,6 +124,35 @@ function goods_exhibition_activate()
 function goods_exhibition_deactivate()
 {
     // 可根据需求删除数据或清理
+}
+
+/**
+ * 确保上传目录存在并写入 .htaccess 保护文件
+ *
+ * 防止上传的图片被当作 PHP 等脚本直接执行（即便扩展名被篡改），
+ * 同时阻止目录列表浏览。仅在文件不存在时写入，避免覆盖用户自定义规则。
+ */
+function goods_exhibition_ensure_upload_protection()
+{
+    $upload_dir = GOODS_EXHIBITION_UPLOAD_DIR;
+
+    if (!file_exists($upload_dir)) {
+        wp_mkdir_p($upload_dir);
+    }
+
+    if (!is_dir($upload_dir)) {
+        return;
+    }
+
+    $htaccess_file = $upload_dir . '.htaccess';
+    if (!file_exists($htaccess_file)) {
+        // 禁止脚本执行、禁止目录浏览、仅允许静态图片资源
+        $content = "Options -Indexes\n";
+        $content .= "<FilesMatch \"\\.(?i:php|phtml|php3|php4|php5|phar|cgi|pl|py|asp|aspx|jsp|sh)$\">\n";
+        $content .= "    Require all denied\n";
+        $content .= "</FilesMatch>\n";
+        @file_put_contents($htaccess_file, $content);
+    }
 }
 
 /**
@@ -203,14 +212,17 @@ function goods_exhibition_ajax_save_sort()
         wp_send_json_error('无效数据');
     }
 
+    // 前置清洗：order 应为 "位置 => 商品ID" 的整型数组，杜绝非数字注入
+    $order = array_map('intval', (array) $order);
+
     global $wpdb;
     $table_name = $wpdb->prefix . 'goods_exhibition';
 
     foreach ($order as $position => $product_id) {
         $wpdb->update(
             $table_name,
-            array('sort_order' => intval($position)),
-            array('id' => intval($product_id)),
+            array('sort_order' => $position),
+            array('id' => $product_id),
             array('%d'),
             array('%d')
         );
@@ -235,11 +247,26 @@ function goods_exhibition_ajax_bulk_move()
     $product_ids = isset($_POST['product_ids']) ? $_POST['product_ids'] : array();
     $target_category = isset($_POST['target_category']) ? sanitize_text_field($_POST['target_category']) : '';
 
-    if (empty($product_ids) || empty($target_category)) {
+    if (empty($product_ids) || !is_array($product_ids) || empty($target_category)) {
         wp_send_json_error('请选择产品和目标分类');
     }
 
+    // 前置清洗：商品 ID 必须为整型
+    $product_ids = array_filter(array_map('intval', (array) $product_ids));
+    if (empty($product_ids)) {
+        wp_send_json_error('无效的产品数据');
+    }
+
+    // 校验目标分类真实存在，防止写入任意字符串
     global $wpdb;
+    $categories_table = $wpdb->prefix . 'goods_exhibition_categories';
+    $category_exists = $wpdb->get_var(
+        $wpdb->prepare("SELECT COUNT(*) FROM `{$categories_table}` WHERE name = %s", $target_category)
+    );
+    if (!$category_exists) {
+        wp_send_json_error('目标分类不存在，请先创建该分类');
+    }
+
     $table_name = $wpdb->prefix . 'goods_exhibition';
 
     $moved = 0;
@@ -247,7 +274,7 @@ function goods_exhibition_ajax_bulk_move()
         $result = $wpdb->update(
             $table_name,
             array('category' => $target_category),
-            array('id' => intval($pid)),
+            array('id' => $pid),
             array('%s'),
             array('%d')
         );

@@ -22,10 +22,11 @@ $wpdb->query("DROP TABLE IF EXISTS `{$table_name}`");
 $categories_table = $wpdb->prefix . 'goods_exhibition_categories';
 $wpdb->query("DROP TABLE IF EXISTS `{$categories_table}`");
 
-// 删除插件选项
+// 删除插件选项（含缓存版本号）
 delete_option('goods_exhibition_version');
+delete_option('goods_exhibition_cache_version');
 
-// 清除所有相关的 transient 缓存
+// 清除所有相关的 transient 缓存（新版本号机制 + 兼容旧 key）
 delete_transient('goods_exhibition_poster_products');
 delete_transient('goods_exhibition_frontend_products_-1');
 delete_transient('goods_exhibition_all_products_-1');
