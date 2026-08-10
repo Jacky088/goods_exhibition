@@ -193,7 +193,15 @@ function goods_exhibition_shortcode_callback($atts)
 
     ob_start();
     foreach ($grouped_products as $category_name => $items) {
-        if ($category_name === '海报展示') {
+        // 跳过所有海报产品分类（任意分类下，只要产品被标记为海报就不在前端分组列表中显示）
+        $has_non_poster = false;
+        foreach ($items as $it) {
+            if (intval($it['is_poster']) !== 1) {
+                $has_non_poster = true;
+                break;
+            }
+        }
+        if (!$has_non_poster) {
             continue;
         }
         ?>

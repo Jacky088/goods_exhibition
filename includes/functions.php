@@ -92,18 +92,37 @@ function goods_exhibition_get_frontend_products($limit = -1)
 
     global $wpdb;
     $table_name = $wpdb->prefix . 'goods_exhibition';
+    $categories_table = $wpdb->prefix . 'goods_exhibition_categories';
+
+    // 排序逻辑：分类按分类表的 sort_order 升序（数字越小越靠前，符合后台配置语义），
+    // 未在分类表中的分类（如历史遗留）则按名字字典序兜底。
+    // 组内按 sort_order ASC, created_at DESC。
+    $order_by = "cat_sort_order ASC, category ASC, t.sort_order ASC, t.created_at DESC";
+    $select  = "t.*, cat.sort_order AS cat_sort_order";
+    $join    = "LEFT JOIN `{$categories_table}` cat ON cat.name = t.category";
 
     // 使用prepare防止SQL注入
     if ($limit > 0) {
         $results = $wpdb->get_results(
-            $wpdb->prepare("SELECT * FROM {$table_name} ORDER BY category ASC, sort_order ASC, created_at DESC LIMIT %d", $limit),
+            $wpdb->prepare(
+                "SELECT {$select} FROM `{$table_name}` t {$join} ORDER BY {$order_by} LIMIT %d",
+                $limit
+            ),
             ARRAY_A
         );
     } else {
         $results = $wpdb->get_results(
-            "SELECT * FROM {$table_name} ORDER BY category ASC, sort_order ASC, created_at DESC",
+            "SELECT {$select} FROM `{$table_name}` t {$join} ORDER BY {$order_by}",
             ARRAY_A
         );
+    }
+
+    // 把 cat_sort_order 临时字段从结果中剔除，保持返回值结构与原来一致
+    if (is_array($results)) {
+        foreach ($results as &$row) {
+            unset($row['cat_sort_order']);
+        }
+        unset($row);
     }
 
     set_transient($cache_key, $results, 12 * HOUR_IN_SECONDS);
