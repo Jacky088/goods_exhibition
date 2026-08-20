@@ -84,7 +84,11 @@
     display: flex;
     overflow-x: auto;
     scroll-behavior: smooth;
-    padding-bottom: 8px;
+    /* 注意：overflow-x 非 visible 时，overflow-y 会被计算为 auto，即垂直方向也裁切。
+       卡片阴影向下扩散约 22px（hover 时约 34px），底部内边距必须大于扩散距离，
+       否则阴影被 padding box 底边硬切成直角。此处用负外边距抵消增量，页面布局不变。 */
+    padding-bottom: 42px;
+    margin-bottom: -34px;
     scrollbar-width: none;
 }
 .goods-exhibition-slider::-webkit-scrollbar {
@@ -99,7 +103,7 @@
     max-width: 360px;
     background: #fff;
     border-radius: 24px;
-    box-shadow: 0 14px 20px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 8px 14px rgba(0, 0, 0, 0.05);
     cursor: default;
     display: flex;
     flex-direction: column;
@@ -126,7 +130,7 @@
 /* 悬浮动画 */
 .goods-exhibition-item:hover {
     transform: translateY(-6px);
-    box-shadow: 0 24px 30px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 14px 20px rgba(0, 0, 0, 0.09);
 }
 
 /* 文字内容 */
@@ -559,10 +563,10 @@
     /* 商品卡片 */
     .goods-exhibition-item {
         background: #2c2c2e;
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 8px 14px rgba(0, 0, 0, 0.2);
     }
     .goods-exhibition-item:hover {
-        box-shadow: 0 20px 30px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 14px 20px rgba(0, 0, 0, 0.3);
     }
 
     /* 标题 */
@@ -640,13 +644,13 @@ body.dark-mode .goods-exhibition-item,
 body[data-theme="dark"] .goods-exhibition-item,
 .dark .goods-exhibition-item {
     background: #2c2c2e;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 8px 14px rgba(0, 0, 0, 0.2);
 }
 
 body.dark-mode .goods-exhibition-item:hover,
 body[data-theme="dark"] .goods-exhibition-item:hover,
 .dark .goods-exhibition-item:hover {
-    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 14px 20px rgba(0, 0, 0, 0.3);
 }
 
 body.dark-mode .goods-exhibition-content > h3.goods-exhibition-title,
