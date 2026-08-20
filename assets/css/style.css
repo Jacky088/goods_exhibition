@@ -2,7 +2,7 @@
  * 好物页面插件前端样式
  */
 
-/* 分类标题居中，自适应布局 */
+/* 分类标题居中，自适应布局；两侧配渐隐细线提升质感 */
 .goods-exhibition-category-title {
     width: 100%;
     max-width: 800px;
@@ -13,12 +13,50 @@
     word-break: break-word;
     box-sizing: border-box;
     padding: 0 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 标题两侧渐隐线条：靠近文字一侧实、外侧渐虚，颜色随标题文字自动适配明暗主题 */
+.goods-exhibition-category-title::before,
+.goods-exhibition-category-title::after {
+    content: '';
+    flex: 1;
+    min-width: 24px;
+    max-width: 120px;
+    height: 1px;
+    opacity: 0.35;
+}
+
+.goods-exhibition-category-title::before {
+    margin-right: 20px;
+    background: linear-gradient(to left, currentColor, transparent);
+}
+
+.goods-exhibition-category-title::after {
+    margin-left: 20px;
+    background: linear-gradient(to right, currentColor, transparent);
 }
 
 @media (max-width: 600px) {
     .goods-exhibition-category-title {
         font-size: 1.4rem;
         margin: 30px auto 15px;
+    }
+
+    .goods-exhibition-category-title::before,
+    .goods-exhibition-category-title::after {
+        min-width: 18px;
+        max-width: 60px;
+    }
+
+    .goods-exhibition-category-title::before {
+        margin-right: 14px;
+    }
+
+    .goods-exhibition-category-title::after {
+        margin-left: 14px;
     }
 }
 

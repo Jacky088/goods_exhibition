@@ -174,6 +174,15 @@ function goods_exhibition_render_admin_notices()
         case 'added':
             $type = 'success';
             $text = '新产品已成功添加！';
+            // 附"编辑该产品"快捷链接：保存后如需继续调整可一键回到编辑页
+            $new_id = isset($_GET['new_id']) ? intval($_GET['new_id']) : 0;
+            if ($new_id > 0) {
+                $edit_url = add_query_arg(
+                    array('page' => 'goods-exhibition', 'tab' => 'add', 'action' => 'edit', 'product_id' => $new_id),
+                    admin_url('admin.php')
+                );
+                $text .= ' <a href="' . esc_url($edit_url) . '">编辑该产品</a>';
+            }
             break;
         case 'updated':
             $type = 'success';
@@ -346,7 +355,9 @@ function goods_exhibition_handle_product_form_action()
                 return;
             }
             goods_exhibition_flush_cache();
-            goods_exhibition_admin_redirect('added');
+            $new_id = (int) $wpdb->insert_id;
+            // 添加成功跳转产品列表：确认新商品落位（sort_order=0 排最前，列表第一页即可见）
+            goods_exhibition_admin_redirect('added', array('tab' => 'list', 'new_id' => $new_id));
         }
     } else {
         goods_exhibition_admin_notice('error', implode('</p><p>', array_map('esc_html', $errors)));
