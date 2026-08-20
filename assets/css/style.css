@@ -16,6 +16,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    border: none; /* 覆盖主题对 h2 添加的默认下边框实线 */
 }
 
 /* 标题两侧渐隐线条：靠近文字一侧实、外侧渐虚，颜色随标题文字自动适配明暗主题 */
@@ -201,6 +202,8 @@
     padding: 0 20px 20px 20px;
     flex-shrink: 0;
     position: relative;
+    overflow: hidden; /* 防止图片占位背景出现直角 */
+    border-radius: 0 0 24px 24px; /* 与卡片底部圆角保持一致 */
 }
 
 .goods-exhibition-image-container .goods-exhibition-image {
