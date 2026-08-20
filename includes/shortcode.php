@@ -37,12 +37,7 @@ function goods_exhibition_render_product_card($product, $is_new = false)
     $inner = '<div class="goods-exhibition-content">';
     $inner .= '<h3 class="goods-exhibition-title">' . $name;
     if ($is_new) {
-        $inner .= ' <svg class="goods-exhibition-new-badge-svg" xmlns="http://www.w3.org/2000/svg" aria-label="NEW"'
-            . ' role="img" width="48" height="24" viewBox="0 0 48 24">'
-            . '<rect x="0" y="0" width="48" height="24" rx="12" ry="12" fill="#d9534f"/>'
-            . '<text x="24" y="16" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700"'
-            . ' fill="white" text-anchor="middle" dominant-baseline="middle">NEW</text>'
-            . '</svg>';
+        $inner .= ' <span class="goods-exhibition-new-badge">NEW</span>';
     }
     $inner .= '</h3>';
     $inner .= '<div class="goods-exhibition-description">' . $desc . '</div>';
