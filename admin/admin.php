@@ -63,6 +63,373 @@ function goods_exhibition_admin_router()
 }
 
 /**
+ * 后台动作统一处理器（PRG 模式）
+ *
+ * 原实现把增删改逻辑内嵌在渲染函数中，浏览器刷新会重复提交表单
+ * （如重复添加产品）。现将动作处理前移到 admin_init 阶段（任何输出之前）：
+ * - 成功：302 重定向到去掉动作参数的干净 URL，结果提示经 goods_msg 参数回传；
+ * - 失败：不重定向，错误提示写入全局变量由渲染函数显示，页面表现与旧版一致。
+ */
+function goods_exhibition_handle_admin_actions()
+{
+    if (wp_doing_ajax()) {
+        return;
+    }
+    if (!isset($_GET['page']) || $_GET['page'] !== 'goods-exhibition') {
+        return;
+    }
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+
+    $current_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'list';
+
+    if ($current_tab === 'add') {
+        goods_exhibition_handle_product_form_action();
+    } elseif ($current_tab === 'categories') {
+        goods_exhibition_handle_category_actions();
+    } else {
+        goods_exhibition_handle_list_actions();
+    }
+}
+add_action('admin_init', 'goods_exhibition_handle_admin_actions');
+
+/**
+ * 记录一条在当前请求内显示的提示（用于不重定向的失败路径）
+ *
+ * @param string $type notice 类型：error | warning
+ * @param string $text 已转义的安全文本
+ */
+function goods_exhibition_admin_notice($type, $text)
+{
+    if (!isset($GLOBALS['goods_exhibition_admin_notices']) || !is_array($GLOBALS['goods_exhibition_admin_notices'])) {
+        $GLOBALS['goods_exhibition_admin_notices'] = array();
+    }
+    $GLOBALS['goods_exhibition_admin_notices'][] = array('type' => $type, 'text' => $text);
+}
+
+/**
+ * 动作处理成功后重定向（保留 tab、筛选、分页与编辑态参数）
+ *
+ * @param string $msg_code 提示信息代码，由 goods_exhibition_render_admin_notices() 翻译为文案
+ * @param array $extra 附加查询参数（如 cnt、cat_name）
+ */
+function goods_exhibition_admin_redirect($msg_code, $extra = array())
+{
+    $args = array('page' => 'goods-exhibition');
+
+    // 保留 tab、搜索、分类筛选与分页参数
+    foreach (array('tab', 's', 'category', 'paged') as $key) {
+        if (isset($_GET[$key]) && is_scalar($_GET[$key]) && $_GET[$key] !== '') {
+            $args[$key] = (string) $_GET[$key];
+        }
+    }
+
+    // 保持编辑态：产品编辑表单提交后需要带回 action=edit&product_id
+    if (isset($_GET['tab'], $_GET['action'], $_GET['product_id'])
+        && $_GET['tab'] === 'add' && $_GET['action'] === 'edit') {
+        $args['action'] = 'edit';
+        $args['product_id'] = intval($_GET['product_id']);
+    }
+
+    $args = array_merge($args, $extra);
+    $args['goods_msg'] = $msg_code;
+
+    wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
+    exit;
+}
+
+/**
+ * 渲染后台提示信息（同请求内的错误 + 重定向回传的结果）
+ */
+function goods_exhibition_render_admin_notices()
+{
+    if (!empty($GLOBALS['goods_exhibition_admin_notices']) && is_array($GLOBALS['goods_exhibition_admin_notices'])) {
+        foreach ($GLOBALS['goods_exhibition_admin_notices'] as $notice) {
+            echo '<div class="notice notice-' . esc_attr($notice['type']) . ' is-dismissible"><p>' . $notice['text'] . '</p></div>';
+        }
+    }
+
+    if (empty($_GET['goods_msg'])) {
+        return;
+    }
+
+    $code = sanitize_key(wp_unslash($_GET['goods_msg']));
+    $cnt = isset($_GET['cnt']) ? intval($_GET['cnt']) : 0;
+    $cat_name = isset($_GET['cat_name']) ? sanitize_text_field(wp_unslash($_GET['cat_name'])) : '';
+
+    switch ($code) {
+        case 'deleted':
+            $type = 'success';
+            $text = '产品已成功删除！';
+            break;
+        case 'delete_failed':
+            $type = 'error';
+            $text = '删除产品失败！';
+            break;
+        case 'bulk_deleted':
+            $type = 'success';
+            $text = '已成功删除 ' . $cnt . ' 个产品！';
+            break;
+        case 'added':
+            $type = 'success';
+            $text = '新产品已成功添加！';
+            break;
+        case 'updated':
+            $type = 'success';
+            $text = '产品已成功更新！';
+            break;
+        case 'cat_added':
+            $type = 'success';
+            $text = '分类「' . esc_html($cat_name) . '」已成功添加！';
+            break;
+        case 'cat_updated':
+            $type = 'success';
+            $text = '分类已更新！';
+            break;
+        case 'cat_deleted':
+            $type = 'success';
+            $text = '分类已成功删除！';
+            break;
+        case 'cat_not_empty':
+            $type = 'warning';
+            $text = '分类「' . esc_html($cat_name) . '」下还有 ' . $cnt . ' 个产品，无法删除。请先将产品移至其他分类。';
+            break;
+        default:
+            return;
+    }
+
+    echo '<div class="notice notice-' . $type . ' is-dismissible"><p>' . $text . '</p></div>';
+}
+
+/**
+ * 产品列表页动作：单个删除（GET）、批量删除（POST）
+ */
+function goods_exhibition_handle_list_actions()
+{
+    // 单个删除
+    if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['product_id']) && isset($_GET['_wpnonce'])) {
+        if (wp_verify_nonce($_GET['_wpnonce'], 'delete_product_' . intval($_GET['product_id']))) {
+            $product_id = intval($_GET['product_id']);
+            if (goods_exhibition_delete_product($product_id)) {
+                goods_exhibition_admin_redirect('deleted');
+            } else {
+                goods_exhibition_admin_redirect('delete_failed');
+            }
+        } else {
+            goods_exhibition_admin_notice('error', '安全验证失败，请重试。');
+        }
+    }
+
+    // 批量删除
+    if (isset($_POST['goods_exhibition_bulk_action']) && $_POST['goods_exhibition_bulk_action'] === 'delete') {
+        if (isset($_POST['_wpnonce_bulk']) && wp_verify_nonce($_POST['_wpnonce_bulk'], 'goods_exhibition_bulk_delete')) {
+            if (!empty($_POST['product_ids']) && is_array($_POST['product_ids'])) {
+                $deleted = goods_exhibition_bulk_delete_products($_POST['product_ids']);
+                goods_exhibition_admin_redirect('bulk_deleted', array('cnt' => $deleted));
+            }
+        } else {
+            goods_exhibition_admin_notice('error', '安全验证失败，请重试。');
+        }
+    }
+}
+
+/**
+ * 添加/编辑产品表单提交（POST）
+ */
+function goods_exhibition_handle_product_form_action()
+{
+    if (!isset($_POST['goods_exhibition_submit'])) {
+        return;
+    }
+
+    check_admin_referer('goods_exhibition_add_product');
+
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'goods_exhibition';
+
+    // 判定编辑态（与渲染函数一致：action=edit 且产品存在）
+    $is_edit = false;
+    $edit_id = 0;
+    if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['product_id'])) {
+        $edit_id = intval($_GET['product_id']);
+        $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM `{$table_name}` WHERE id = %d", $edit_id));
+        if ($exists) {
+            $is_edit = true;
+        }
+    }
+
+    $product_name = isset($_POST['product_name']) ? sanitize_text_field($_POST['product_name']) : '';
+    $product_description = isset($_POST['product_description']) ? wp_kses_post($_POST['product_description']) : '';
+    $product_price = isset($_POST['product_price']) ? sanitize_text_field($_POST['product_price']) : '';
+    $product_url = isset($_POST['product_url']) ? esc_url_raw($_POST['product_url']) : '';
+    $product_category = isset($_POST['product_category']) ? sanitize_text_field($_POST['product_category']) : '';
+    $product_image_url_from_media = isset($_POST['product_image_url']) ? esc_url_raw($_POST['product_image_url']) : '';
+    $product_is_new = isset($_POST['product_is_new']) ? 1 : 0;
+    $product_is_poster = isset($_POST['product_is_poster']) ? 1 : 0;
+    $poster_image_url_from_media = isset($_POST['poster_image_url']) ? esc_url_raw($_POST['poster_image_url']) : '';
+    $uploaded_image_url = '';
+    $uploaded_poster_image_url = '';
+    $errors = array();
+
+    // 使用统一的图片上传处理函数
+    $image_result = goods_exhibition_handle_image_upload('product_image');
+    if (!empty($image_result['error'])) {
+        $errors[] = $image_result['error'];
+    }
+    if ($image_result['success']) {
+        $uploaded_image_url = $image_result['url'];
+    }
+
+    // 海报图片上传
+    $poster_result = goods_exhibition_handle_image_upload('poster_image');
+    if (!empty($poster_result['error'])) {
+        $errors[] = $poster_result['error'];
+    }
+    if ($poster_result['success']) {
+        $uploaded_poster_image_url = $poster_result['url'];
+    }
+
+    $final_image_url = !empty($uploaded_image_url) ? $uploaded_image_url : $product_image_url_from_media;
+    $final_poster_image_url = !empty($uploaded_poster_image_url) ? $uploaded_poster_image_url : $poster_image_url_from_media;
+
+    if (empty($product_name)) {
+        $errors[] = '产品名称不能为空';
+    }
+    if (empty($product_description)) {
+        $errors[] = '产品描述不能为空';
+    }
+    if (empty($product_category)) {
+        $errors[] = '产品类别不能为空';
+    }
+    if (empty($final_image_url)) {
+        $errors[] = '请上传产品图片或从媒体库选择';
+    }
+    if ($product_is_poster && empty($final_poster_image_url)) {
+        $errors[] = '已勾选"标记为海报"，请上传或选择海报图片';
+    }
+
+    if (empty($errors)) {
+        $data = array(
+            'name' => $product_name,
+            'description' => $product_description,
+            'price' => $product_price,
+            'image_url' => $final_image_url,
+            'url' => $product_url,
+            'category' => $product_category,
+            'is_new' => $product_is_new,
+            'is_poster' => $product_is_poster,
+            'poster_image_url' => $final_poster_image_url,
+            'updated_at' => current_time('mysql'),
+        );
+
+        if ($is_edit) {
+            $result = $wpdb->update(
+                $table_name,
+                $data,
+                array('id' => $edit_id)
+            );
+            if ($result === false) {
+                goods_exhibition_admin_notice('error', esc_html('更新产品时出错: ' . $wpdb->last_error));
+                return;
+            }
+            goods_exhibition_flush_cache();
+            goods_exhibition_admin_redirect('updated');
+        } else {
+            $data['created_at'] = current_time('mysql');
+            $result = $wpdb->insert(
+                $table_name,
+                $data
+            );
+            if ($result === false) {
+                goods_exhibition_admin_notice('error', esc_html('添加新产品时出错: ' . $wpdb->last_error));
+                return;
+            }
+            goods_exhibition_flush_cache();
+            goods_exhibition_admin_redirect('added');
+        }
+    } else {
+        goods_exhibition_admin_notice('error', implode('</p><p>', array_map('esc_html', $errors)));
+    }
+}
+
+/**
+ * 分类管理页动作：添加（POST）、删除（GET）、编辑（POST）
+ */
+function goods_exhibition_handle_category_actions()
+{
+    global $wpdb;
+    $categories_table = $wpdb->prefix . 'goods_exhibition_categories';
+    $products_table = $wpdb->prefix . 'goods_exhibition';
+
+    // 添加分类
+    if (isset($_POST['goods_exhibition_add_category'])) {
+        check_admin_referer('goods_exhibition_category_action');
+        $new_name = isset($_POST['category_name']) ? sanitize_text_field($_POST['category_name']) : '';
+        if (!empty($new_name)) {
+            $exists = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$categories_table}` WHERE name = %s", $new_name));
+            if ($exists > 0) {
+                goods_exhibition_admin_notice('warning', '分类「' . esc_html($new_name) . '」已存在。');
+            } else {
+                $sort = isset($_POST['category_sort']) ? intval($_POST['category_sort']) : 0;
+                $wpdb->insert($categories_table, array('name' => $new_name, 'sort_order' => $sort));
+                goods_exhibition_admin_redirect('cat_added', array('cat_name' => $new_name));
+            }
+        } else {
+            goods_exhibition_admin_notice('error', '分类名称不能为空。');
+        }
+    }
+
+    // 删除分类
+    if (isset($_GET['action']) && $_GET['action'] === 'delete_cat' && isset($_GET['cat_id']) && isset($_GET['_wpnonce'])) {
+        $cat_id = intval($_GET['cat_id']);
+        if (wp_verify_nonce($_GET['_wpnonce'], 'delete_category_' . $cat_id)) {
+            // 获取分类名称
+            $cat_name = $wpdb->get_var($wpdb->prepare("SELECT name FROM `{$categories_table}` WHERE id = %d", $cat_id));
+            if ($cat_name) {
+                // 检查该分类下是否有产品
+                $product_count = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$products_table}` WHERE category = %s", $cat_name));
+                if ($product_count > 0) {
+                    goods_exhibition_admin_redirect('cat_not_empty', array('cat_name' => $cat_name, 'cnt' => $product_count));
+                } else {
+                    $wpdb->delete($categories_table, array('id' => $cat_id), array('%d'));
+                    goods_exhibition_admin_redirect('cat_deleted');
+                }
+            }
+        } else {
+            goods_exhibition_admin_notice('error', '安全验证失败。');
+        }
+    }
+
+    // 编辑分类
+    if (isset($_POST['goods_exhibition_edit_category'])) {
+        check_admin_referer('goods_exhibition_category_action');
+        $edit_id = isset($_POST['edit_cat_id']) ? intval($_POST['edit_cat_id']) : 0;
+        $edit_name = isset($_POST['edit_category_name']) ? sanitize_text_field($_POST['edit_category_name']) : '';
+        $edit_sort = isset($_POST['edit_category_sort']) ? intval($_POST['edit_category_sort']) : 0;
+        if (!empty($edit_name) && $edit_id > 0) {
+            // 检查名称是否与其他分类冲突
+            $conflict = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM `{$categories_table}` WHERE name = %s AND id != %d",
+                $edit_name, $edit_id
+            ));
+            if ($conflict > 0) {
+                goods_exhibition_admin_notice('warning', '已存在同名分类。');
+            } else {
+                // 同步更新产品表中的分类名
+                $old_name = $wpdb->get_var($wpdb->prepare("SELECT name FROM `{$categories_table}` WHERE id = %d", $edit_id));
+                $wpdb->update($categories_table, array('name' => $edit_name, 'sort_order' => $edit_sort), array('id' => $edit_id));
+                if ($old_name !== $edit_name) {
+                    $wpdb->update($products_table, array('category' => $edit_name), array('category' => $old_name));
+                    goods_exhibition_flush_cache();
+                }
+                goods_exhibition_admin_redirect('cat_updated');
+            }
+        }
+    }
+}
+
+/**
  * 渲染管理页面头部：大标题 + 分页卡导航
  */
 function goods_exhibition_render_admin_header($current_tab)
@@ -87,36 +454,8 @@ function goods_exhibition_render_admin_header($current_tab)
  */
 function goods_exhibition_render_product_list_tab()
 {
-    // 处理单个删除操作
-    if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['product_id']) && isset($_GET['_wpnonce'])) {
-        if (wp_verify_nonce($_GET['_wpnonce'], 'delete_product_' . intval($_GET['product_id']))) {
-            $product_id = intval($_GET['product_id']);
-            if (goods_exhibition_delete_product($product_id)) {
-                echo '<div class="notice notice-success is-dismissible"><p>产品已成功删除！</p></div>';
-            } else {
-                echo '<div class="notice notice-error is-dismissible"><p>删除产品失败！</p></div>';
-            }
-        } else {
-            echo '<div class="notice notice-error is-dismissible"><p>安全验证失败，请重试。</p></div>';
-        }
-    }
-
-    // 处理批量删除
-    if (isset($_POST['goods_exhibition_bulk_action']) && $_POST['goods_exhibition_bulk_action'] === 'delete') {
-        if (isset($_POST['_wpnonce_bulk']) && wp_verify_nonce($_POST['_wpnonce_bulk'], 'goods_exhibition_bulk_delete')) {
-            if (!empty($_POST['product_ids']) && is_array($_POST['product_ids'])) {
-                $deleted = 0;
-                foreach ($_POST['product_ids'] as $pid) {
-                    if (goods_exhibition_delete_product(intval($pid))) {
-                        $deleted++;
-                    }
-                }
-                echo '<div class="notice notice-success is-dismissible"><p>已成功删除 ' . $deleted . ' 个产品！</p></div>';
-            }
-        } else {
-            echo '<div class="notice notice-error is-dismissible"><p>安全验证失败，请重试。</p></div>';
-        }
-    }
+    // 显示动作处理结果提示（删除等操作已前移至 admin_init 阶段处理）
+    goods_exhibition_render_admin_notices();
 
     global $wpdb;
     $table_name = $wpdb->prefix . 'goods_exhibition';
@@ -281,7 +620,7 @@ function goods_exhibition_render_product_list_tab()
                                 <td class="column-thumb">
                                     <?php if (!empty($product['image_url'])): ?>
                                         <img src="<?php echo esc_url($product['image_url']); ?>"
-                                            alt="<?php echo esc_attr($product['name']); ?>">
+                                            alt="<?php echo esc_attr($product['name']); ?>" loading="lazy">
                                     <?php else: ?>
                                         <span class="goods-no-image">无</span>
                                     <?php endif; ?>
@@ -289,7 +628,14 @@ function goods_exhibition_render_product_list_tab()
                                 <td class="column-name">
                                     <strong><?php echo esc_html($product['name']); ?></strong>
                                 </td>
-                                <td class="column-desc"><?php echo esc_html(mb_strimwidth($product['description'], 0, 40, '...')); ?></td>
+                                <td class="column-desc"><?php
+                                    // mbstring 扩展缺失时使用 WP 内置函数兜底，避免致命错误
+                                    if (function_exists('mb_strimwidth')) {
+                                        echo esc_html(mb_strimwidth($product['description'], 0, 40, '...'));
+                                    } else {
+                                        echo esc_html(wp_html_excerpt($product['description'], 40, '...'));
+                                    }
+                                ?></td>
                                 <td class="column-price"><?php echo esc_html($product['price']); ?></td>
                                 <td class="column-category"><span class="goods-category-badge"><?php echo esc_html($product['category']); ?></span></td>
                                 <td class="column-tags">
@@ -395,136 +741,15 @@ function goods_exhibition_render_add_product_tab()
         }
     }
 
-    if (isset($_POST['goods_exhibition_submit'])) {
-        check_admin_referer('goods_exhibition_add_product');
-
-        $product_name = sanitize_text_field($_POST['product_name']);
-        $product_description = wp_kses_post($_POST['product_description']);
-        $product_price = sanitize_text_field($_POST['product_price']);
-        $product_url = esc_url_raw($_POST['product_url']);
-        $product_category = sanitize_text_field($_POST['product_category']);
-        $product_image_url_from_media = esc_url_raw($_POST['product_image_url']);
-        $product_is_new = isset($_POST['product_is_new']) ? 1 : 0;
-        $product_is_poster = isset($_POST['product_is_poster']) ? 1 : 0;
-        $poster_image_url_from_media = esc_url_raw($_POST['poster_image_url']);
-        $uploaded_image_url = '';
-        $uploaded_poster_image_url = '';
-        $errors = array();
-
-        // 使用统一的图片上传处理函数
-        $image_result = goods_exhibition_handle_image_upload('product_image');
-        if (!empty($image_result['error'])) {
-            $errors[] = $image_result['error'];
-        }
-        if ($image_result['success']) {
-            $uploaded_image_url = $image_result['url'];
-        }
-
-        // 海报图片上传
-        $poster_result = goods_exhibition_handle_image_upload('poster_image');
-        if (!empty($poster_result['error'])) {
-            $errors[] = $poster_result['error'];
-        }
-        if ($poster_result['success']) {
-            $uploaded_poster_image_url = $poster_result['url'];
-        }
-
-        $final_image_url = !empty($uploaded_image_url) ? $uploaded_image_url : $product_image_url_from_media;
-        $final_poster_image_url = !empty($uploaded_poster_image_url) ? $uploaded_poster_image_url : $poster_image_url_from_media;
-
-        if (empty($product_name)) {
-            $errors[] = '产品名称不能为空';
-        }
-        if (empty($product_description)) {
-            $errors[] = '产品描述不能为空';
-        }
-        if (empty($product_category)) {
-            $errors[] = '产品类别不能为空';
-        }
-        if (empty($final_image_url)) {
-            $errors[] = '请上传产品图片或从媒体库选择';
-        }
-        if ($product_is_poster && empty($final_poster_image_url)) {
-            $errors[] = '已勾选"标记为海报"，请上传或选择海报图片';
-        }
-
-        if (empty($errors)) {
-            $data = array(
-                'name' => $product_name,
-                'description' => $product_description,
-                'price' => $product_price,
-                'image_url' => $final_image_url,
-                'url' => $product_url,
-                'category' => $product_category,
-                'is_new' => $product_is_new,
-                'is_poster' => $product_is_poster,
-                'poster_image_url' => $final_poster_image_url,
-                'updated_at' => current_time('mysql'),
-            );
-
-            if ($is_edit) {
-                $result = $wpdb->update(
-                    $table_name,
-                    $data,
-                    array('id' => $product['id'])
-                );
-                if ($result === false) {
-                    $errors[] = '更新产品时出错: ' . $wpdb->last_error;
-                } else {
-                    $success_message = '产品已成功更新！';
-                }
-            } else {
-                $data['created_at'] = current_time('mysql');
-                $result = $wpdb->insert(
-                    $table_name,
-                    $data
-                );
-                if ($result === false) {
-                    $errors[] = '添加新产品时出错: ' . $wpdb->last_error;
-                } else {
-                    $product['id'] = $wpdb->insert_id;
-                    $success_message = '新产品已成功添加！';
-                }
-            }
-
-            // 清除缓存
-            goods_exhibition_flush_cache();
-
-            if (empty($errors)) {
-                echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($success_message) . '</p></div>';
-
-                if ($is_edit) {
-                    $product = $wpdb->get_row($wpdb->prepare("SELECT * FROM `{$table_name}` WHERE id = %d", $product['id']), ARRAY_A);
-                } else {
-                    $product = array(
-                        'id' => 0,
-                        'name' => '',
-                        'description' => '',
-                        'price' => '',
-                        'image_url' => '',
-                        'url' => '',
-                        'category' => '',
-                        'is_new' => 0,
-                        'is_poster' => 0,
-                        'poster_image_url' => '',
-                    );
-                    $is_edit = false;
-                    $form_title = '添加新产品';
-                }
-            } else {
-                echo '<div class="notice notice-error is-dismissible"><p>' . implode('</p><p>', array_map('esc_html', $errors)) . '</p></div>';
-            }
-        } else {
-            echo '<div class="notice notice-error is-dismissible"><p>' . implode('</p><p>', array_map('esc_html', $errors)) . '</p></div>';
-        }
-    }
+    // 显示动作处理结果提示（表单提交已前移至 admin_init 阶段处理）
+    goods_exhibition_render_admin_notices();
     ?>
     <div class="goods-exhibition-tab-content">
         <?php if ($is_edit): ?>
             <h2><?php echo esc_html($form_title); ?> (ID: <?php echo esc_html($product['id']); ?>)</h2>
         <?php endif; ?>
 
-        <form method="post" enctype="multipart/form-data" action="<?php echo admin_url('admin.php?page=goods-exhibition&tab=add' . ($is_edit ? '&action=edit&product_id=' . $product['id'] : '')); ?>">
+        <form method="post" enctype="multipart/form-data" id="goods-exhibition-product-form" action="<?php echo admin_url('admin.php?page=goods-exhibition&tab=add' . ($is_edit ? '&action=edit&product_id=' . $product['id'] : '')); ?>">
             <?php wp_nonce_field('goods_exhibition_add_product'); ?>
             <table class="form-table">
                 <tr>
@@ -647,71 +872,8 @@ function goods_exhibition_render_categories_tab()
         return;
     }
 
-    // 处理添加分类
-    if (isset($_POST['goods_exhibition_add_category'])) {
-        check_admin_referer('goods_exhibition_category_action');
-        $new_name = sanitize_text_field($_POST['category_name']);
-        if (!empty($new_name)) {
-            $exists = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$categories_table}` WHERE name = %s", $new_name));
-            if ($exists > 0) {
-                echo '<div class="notice notice-warning is-dismissible"><p>分类「' . esc_html($new_name) . '」已存在。</p></div>';
-            } else {
-                $sort = isset($_POST['category_sort']) ? intval($_POST['category_sort']) : 0;
-                $wpdb->insert($categories_table, array('name' => $new_name, 'sort_order' => $sort));
-                echo '<div class="notice notice-success is-dismissible"><p>分类「' . esc_html($new_name) . '」已成功添加！</p></div>';
-            }
-        } else {
-            echo '<div class="notice notice-error is-dismissible"><p>分类名称不能为空。</p></div>';
-        }
-    }
-
-    // 处理删除分类
-    if (isset($_GET['action']) && $_GET['action'] === 'delete_cat' && isset($_GET['cat_id']) && isset($_GET['_wpnonce'])) {
-        $cat_id = intval($_GET['cat_id']);
-        if (wp_verify_nonce($_GET['_wpnonce'], 'delete_category_' . $cat_id)) {
-            // 获取分类名称
-            $cat_name = $wpdb->get_var($wpdb->prepare("SELECT name FROM `{$categories_table}` WHERE id = %d", $cat_id));
-            if ($cat_name) {
-                // 检查该分类下是否有产品
-                $product_count = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$products_table}` WHERE category = %s", $cat_name));
-                if ($product_count > 0) {
-                    echo '<div class="notice notice-warning is-dismissible"><p>分类「' . esc_html($cat_name) . '」下还有 ' . $product_count . ' 个产品，无法删除。请先将产品移至其他分类。</p></div>';
-                } else {
-                    $wpdb->delete($categories_table, array('id' => $cat_id), array('%d'));
-                    echo '<div class="notice notice-success is-dismissible"><p>分类已成功删除！</p></div>';
-                }
-            }
-        } else {
-            echo '<div class="notice notice-error is-dismissible"><p>安全验证失败。</p></div>';
-        }
-    }
-
-    // 处理编辑分类
-    if (isset($_POST['goods_exhibition_edit_category'])) {
-        check_admin_referer('goods_exhibition_category_action');
-        $edit_id = intval($_POST['edit_cat_id']);
-        $edit_name = sanitize_text_field($_POST['edit_category_name']);
-        $edit_sort = intval($_POST['edit_category_sort']);
-        if (!empty($edit_name) && $edit_id > 0) {
-            // 检查名称是否与其他分类冲突
-            $conflict = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM `{$categories_table}` WHERE name = %s AND id != %d",
-                $edit_name, $edit_id
-            ));
-            if ($conflict > 0) {
-                echo '<div class="notice notice-warning is-dismissible"><p>已存在同名分类。</p></div>';
-            } else {
-                // 同步更新产品表中的分类名
-                $old_name = $wpdb->get_var($wpdb->prepare("SELECT name FROM `{$categories_table}` WHERE id = %d", $edit_id));
-                $wpdb->update($categories_table, array('name' => $edit_name, 'sort_order' => $edit_sort), array('id' => $edit_id));
-                if ($old_name !== $edit_name) {
-                    $wpdb->update($products_table, array('category' => $edit_name), array('category' => $old_name));
-                    goods_exhibition_flush_cache();
-                }
-                echo '<div class="notice notice-success is-dismissible"><p>分类已更新！</p></div>';
-            }
-        }
-    }
+    // 显示动作处理结果提示（增删改已前移至 admin_init 阶段处理）
+    goods_exhibition_render_admin_notices();
 
     // 获取所有分类及产品数量
     $categories = $wpdb->get_results(
@@ -812,6 +974,63 @@ function goods_exhibition_render_categories_tab()
 }
 
 /**
+ * 批量删除产品
+ *
+ * 与逐个调用 goods_exhibition_delete_product 相比：
+ * 单条 SELECT 取出图片信息 + 单条 DELETE 批量删除 + 仅触发一次缓存清理，
+ * 避免删除 N 个产品时产生 N 次缓存失效与 N 次逐行删除。
+ *
+ * @param array $product_ids 产品ID数组
+ * @return int 成功删除的数量
+ */
+function goods_exhibition_bulk_delete_products($product_ids)
+{
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'goods_exhibition';
+
+    $product_ids = array_unique(array_filter(array_map('intval', (array) $product_ids)));
+    if (empty($product_ids)) {
+        return 0;
+    }
+
+    // 一次性取出待删除产品的图片 URL（用于后续清理本地文件）
+    $ids_sql = implode(',', $product_ids); // 均已 intval，安全可控
+    $products = $wpdb->get_results(
+        "SELECT image_url, poster_image_url FROM `{$table_name}` WHERE id IN ({$ids_sql})",
+        ARRAY_A
+    );
+
+    // 单条 SQL 批量删除
+    $deleted = $wpdb->query("DELETE FROM `{$table_name}` WHERE id IN ({$ids_sql})");
+    if ($deleted === false) {
+        return 0;
+    }
+
+    // 清理插件上传目录内的关联图片文件（媒体库/外链图片不受影响），按文件名去重
+    $upload_dir = GOODS_EXHIBITION_UPLOAD_DIR;
+    $upload_url = GOODS_EXHIBITION_UPLOAD_URL;
+    $files_to_delete = array();
+    if (is_array($products)) {
+        foreach ($products as $product) {
+            foreach (array('image_url', 'poster_image_url') as $field) {
+                $url = isset($product[$field]) ? $product[$field] : '';
+                if (!empty($url) && strpos($url, $upload_url) === 0) {
+                    $files_to_delete[basename($url)] = true;
+                }
+            }
+        }
+    }
+    foreach (array_keys($files_to_delete) as $filename) {
+        goods_exhibition_safe_delete_file($upload_dir . $filename);
+    }
+
+    // 整批只清理一次缓存
+    goods_exhibition_flush_cache();
+
+    return (int) $deleted;
+}
+
+/**
  * 删除产品（使用安全的文件删除函数）
  *
  * @param int $product_id 产品ID
@@ -828,7 +1047,7 @@ function goods_exhibition_delete_product($product_id)
         $wpdb->delete($table_name, array('id' => $product_id), array('%d'));
 
         $upload_dir = GOODS_EXHIBITION_UPLOAD_DIR;
-        $upload_url = GOODS_EXHIBITION_URL . 'uploads/';
+        $upload_url = GOODS_EXHIBITION_UPLOAD_URL;
 
         // 使用安全删除函数，防止路径遍历攻击
         $image_url = $product['image_url'];

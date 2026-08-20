@@ -3,7 +3,7 @@
  * Plugin Name: 好物页面插件
  * Plugin URI: https://github.com/Jacky088/goods_exhibition
  * Description: 一个展示好物商品的WordPress插件（已通过安全审查和优化）
- * Version: 1.3.2
+ * Version: 1.4.1
  * Author: 木木
  * Author URI: https://github.com/Jacky088/goods_exhibition
  * License: GPL v2 or later
@@ -19,14 +19,17 @@ if (!defined('WPINC')) {
 }
 
 // 定义插件版本
-define('GOODS_EXHIBITION_VERSION', '1.3.2');
+define('GOODS_EXHIBITION_VERSION', '1.4.1');
 // 定义插件路径
 define('GOODS_EXHIBITION_PATH', plugin_dir_path(__FILE__));
 // 定义插件URL
 define('GOODS_EXHIBITION_URL', plugin_dir_url(__FILE__));
 
-// 插件上传目录定义（新增）
-define('GOODS_EXHIBITION_UPLOAD_DIR', GOODS_EXHIBITION_PATH . 'uploads/');
+// 插件上传目录定义
+// 重要：图片必须存储在 wp-content/uploads/goods-exhibition/（而非插件目录内），
+// 因为插件更新时其目录会被整体删除重建，存放在插件目录内的图片会全部丢失。
+define('GOODS_EXHIBITION_UPLOAD_DIR', trailingslashit(wp_upload_dir()['basedir']) . 'goods-exhibition/');
+define('GOODS_EXHIBITION_UPLOAD_URL', trailingslashit(wp_upload_dir()['baseurl']) . 'goods-exhibition/');
 
 // 包含所需文件
 require_once GOODS_EXHIBITION_PATH . 'includes/functions.php';
@@ -52,9 +55,39 @@ function goods_exhibition_plugin_action_links($links)
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'goods_exhibition_plugin_action_links');
 
 /**
- * 插件激活时执行的函数 - 新增 price、category、is_poster、poster_image_url 字段
+ * 插件激活时执行的函数
  */
 function goods_exhibition_activate()
+{
+    goods_exhibition_setup_database();
+    goods_exhibition_migrate_legacy_uploads();
+    goods_exhibition_ensure_upload_protection();
+    update_option('goods_exhibition_version', GOODS_EXHIBITION_VERSION);
+}
+
+/**
+ * 升级例程：插件通过后台"自动更新"时不经过停用/激活流程，
+ * 这里对比数据库记录的版本号，低于当前版本时自动执行表结构升级与数据迁移，
+ * 确保老用户更新插件后不会因缺少新字段/新表而报错。
+ */
+function goods_exhibition_maybe_upgrade()
+{
+    $installed_version = get_option('goods_exhibition_version', '0');
+    if (version_compare($installed_version, GOODS_EXHIBITION_VERSION, '>=')) {
+        return;
+    }
+
+    goods_exhibition_setup_database();
+    goods_exhibition_migrate_legacy_uploads();
+    goods_exhibition_ensure_upload_protection();
+    update_option('goods_exhibition_version', GOODS_EXHIBITION_VERSION);
+}
+add_action('admin_init', 'goods_exhibition_maybe_upgrade');
+
+/**
+ * 创建/升级数据表（dbDelta 幂等，可安全重复执行）
+ */
+function goods_exhibition_setup_database()
 {
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
@@ -69,12 +102,12 @@ function goods_exhibition_activate()
         name varchar(255) NOT NULL,
         description text NOT NULL,
         price varchar(50) DEFAULT '' NOT NULL,
-        image_url varchar(255) NOT NULL,
-        url varchar(255) DEFAULT '' NOT NULL,
+        image_url varchar(500) NOT NULL,
+        url varchar(500) DEFAULT '' NOT NULL,
         category varchar(255) DEFAULT '' NOT NULL,
         is_new tinyint(1) DEFAULT 0 NOT NULL,
         is_poster tinyint(1) DEFAULT 0 NOT NULL,
-        poster_image_url varchar(255) DEFAULT '' NOT NULL,
+        poster_image_url varchar(500) DEFAULT '' NOT NULL,
         sort_order int DEFAULT 0 NOT NULL,
         created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
         updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
@@ -122,12 +155,90 @@ function goods_exhibition_activate()
             ));
         }
     }
+}
 
-    // 创建上传目录并写入 .htaccess 保护（防止直接执行上传文件）
-    goods_exhibition_ensure_upload_protection();
+/**
+ * 迁移旧版上传的图片文件
+ *
+ * 旧版本（<= 1.3.x）把图片存储在插件目录内的 uploads/ 子目录，
+ * 插件一旦更新（目录被整体替换）图片就会丢失。
+ * 此函数把旧目录中的图片复制到 wp-content/uploads/goods-exhibition/，
+ * 并同步更新数据库中引用的 URL；旧文件保留作为备份（插件更新后旧目录会被自动清除）。
+ *
+ * 通过 goods_exhibition_upload_migrated 选项保证只完整执行一次。
+ */
+function goods_exhibition_migrate_legacy_uploads()
+{
+    if (get_option('goods_exhibition_upload_migrated')) {
+        return;
+    }
 
-    // 添加插件版本号选项
-    add_option('goods_exhibition_version', GOODS_EXHIBITION_VERSION);
+    $legacy_dir = GOODS_EXHIBITION_PATH . 'uploads/';
+
+    // 旧目录不存在（全新安装或从未使用过旧版上传），直接标记完成
+    if (!is_dir($legacy_dir)) {
+        update_option('goods_exhibition_upload_migrated', 1);
+        return;
+    }
+
+    $new_dir = GOODS_EXHIBITION_UPLOAD_DIR;
+    wp_mkdir_p($new_dir);
+
+    // 复制旧目录中的图片到新目录（已存在的文件跳过，避免覆盖）
+    $migrated_all = true;
+    foreach (scandir($legacy_dir) as $entry) {
+        if ($entry === '.' || $entry === '..' || $entry === '.htaccess') {
+            continue;
+        }
+        $source = $legacy_dir . $entry;
+        if (!is_file($source)) {
+            continue;
+        }
+        $target = $new_dir . $entry;
+        if (!file_exists($target) && !copy($source, $target)) {
+            $migrated_all = false; // 复制失败（如权限问题），下次进入后台时重试
+        }
+    }
+
+    if (!$migrated_all) {
+        return;
+    }
+
+    // 更新数据库中引用旧目录 URL 的记录（仅更新已确认复制到新目录的文件）
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'goods_exhibition';
+    $legacy_url = GOODS_EXHIBITION_URL . 'uploads/';
+    $like_legacy = $wpdb->esc_like($legacy_url) . '%';
+    $rows = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT id, image_url, poster_image_url FROM `{$table_name}` WHERE image_url LIKE %s OR poster_image_url LIKE %s",
+            $like_legacy,
+            $like_legacy
+        ),
+        ARRAY_A
+    );
+
+    if (is_array($rows)) {
+        foreach ($rows as $row) {
+            $update = array();
+            foreach (array('image_url', 'poster_image_url') as $field) {
+                $url = isset($row[$field]) ? $row[$field] : '';
+                if (!empty($url) && strpos($url, $legacy_url) === 0) {
+                    $filename = basename($url);
+                    if (file_exists($new_dir . $filename)) {
+                        $update[$field] = GOODS_EXHIBITION_UPLOAD_URL . $filename;
+                    }
+                }
+            }
+            if (!empty($update)) {
+                $wpdb->update($table_name, $update, array('id' => intval($row['id'])));
+            }
+        }
+    }
+
+    // URL 已变更，清除缓存使其立即生效
+    goods_exhibition_flush_cache();
+    update_option('goods_exhibition_upload_migrated', 1);
 }
 
 /**
@@ -230,15 +341,25 @@ function goods_exhibition_ajax_save_sort()
     global $wpdb;
     $table_name = $wpdb->prefix . 'goods_exhibition';
 
+    // 单条 CASE WHEN 批量更新，代替逐行 UPDATE 的 N 次数据库往返
+    $cases = array();
+    $ids = array();
     foreach ($order as $position => $product_id) {
-        $wpdb->update(
-            $table_name,
-            array('sort_order' => $position),
-            array('id' => $product_id),
-            array('%d'),
-            array('%d')
-        );
+        $product_id = intval($product_id);
+        if ($product_id < 1 || isset($ids[$product_id])) {
+            continue; // 跳过无效值与重复 ID
+        }
+        $ids[$product_id] = $product_id;
+        $cases[] = $wpdb->prepare('WHEN %d THEN %d', $product_id, intval($position));
     }
+
+    if (empty($ids)) {
+        wp_send_json_error('无效数据');
+    }
+
+    $ids_sql = implode(',', $ids); // 均已 intval，安全可控
+    $case_sql = implode(' ', $cases);
+    $wpdb->query("UPDATE `{$table_name}` SET sort_order = CASE id {$case_sql} END WHERE id IN ({$ids_sql})");
 
     goods_exhibition_flush_cache();
     wp_send_json_success('排序已保存');
@@ -281,18 +402,17 @@ function goods_exhibition_ajax_bulk_move()
 
     $table_name = $wpdb->prefix . 'goods_exhibition';
 
-    $moved = 0;
-    foreach ($product_ids as $pid) {
-        $result = $wpdb->update(
-            $table_name,
-            array('category' => $target_category),
-            array('id' => $pid),
-            array('%s'),
-            array('%d')
-        );
-        if ($result !== false) {
-            $moved++;
-        }
+    // 单条 SQL 批量更新分类，代替逐行 UPDATE 的 N 次数据库往返
+    // moved 为实际受影响行数：已在目标分类的产品不会重复计数（提示数量比旧版更准确）
+    $ids_sql = implode(',', $product_ids); // 均已 intval，安全可控
+    $moved = $wpdb->query(
+        $wpdb->prepare(
+            "UPDATE `{$table_name}` SET category = %s WHERE id IN ({$ids_sql})",
+            $target_category
+        )
+    );
+    if ($moved === false) {
+        $moved = 0;
     }
 
     goods_exhibition_flush_cache();
@@ -300,66 +420,8 @@ function goods_exhibition_ajax_bulk_move()
 }
 add_action('wp_ajax_goods_exhibition_bulk_move', 'goods_exhibition_ajax_bulk_move');
 
-/**
- * 前端首页显示标记为海报的产品幻灯片
- * 【已注释关闭此钩子，隐藏最上方“海报展示”块】
+/*
+ * 历史说明：v1.3.x 曾在 wp_body_open 钩子输出"海报展示"幻灯片，
+ * 该功能后由 [goods_exhibition] 短代码内部的海报轮播替代，
+ * 对应的 goods_exhibition_render_poster_slideshow() 已作为死代码移除。
  */
-// add_action('wp_body_open', 'goods_exhibition_render_poster_slideshow');
-function goods_exhibition_render_poster_slideshow()
-{
-    $posters = goods_exhibition_get_poster_products();
-    if (empty($posters)) {
-        return;
-    }
-    ?>
-    <div class="goods-exhibition-poster-wrapper" style="max-width:1200px;margin:20px auto;">
-        <h2 class="goods-exhibition-category-title">海报展示</h2>
-        <div class="goods-exhibition-wrapper">
-            <button class="goods-exhibition-arrow goods-exhibition-arrow-left"
-                aria-label="上一个"><span aria-hidden="true">&#10094;</span></button>
-            <div class="goods-exhibition-slider">
-                <?php foreach ($posters as $poster):
-                    $url = esc_url($poster['url']);
-                    $name = esc_html($poster['name']);
-                    $desc = wp_kses_post($poster['description']);
-                    $price = esc_html($poster['price']);
-                    $image = esc_url($poster['poster_image_url']);
-                    ?>
-                    <?php if ($url): ?>
-                        <a href="<?php echo $url; ?>" target="_blank" rel="noopener noreferrer"
-                            class="goods-exhibition-item has-link">
-                            <div class="goods-exhibition-content">
-                                <h3 class="goods-exhibition-title"><?php echo $name; ?></h3>
-                                <div class="goods-exhibition-description"><?php echo $desc; ?></div>
-                                <?php if ($price): ?>
-                                    <div class="goods-exhibition-price"><?php echo $price; ?></div><?php endif; ?>
-                            </div>
-                            <div class="goods-exhibition-image-container">
-                                <img src="<?php echo $image; ?>" alt="<?php echo $name; ?>"
-                                    width="500" height="500"
-                                    class="goods-exhibition-image no-lightbox">
-                            </div>
-                        </a>
-                    <?php else: ?>
-                        <div class="goods-exhibition-item">
-                            <div class="goods-exhibition-content">
-                                <h3 class="goods-exhibition-title"><?php echo $name; ?></h3>
-                                <div class="goods-exhibition-description"><?php echo $desc; ?></div>
-                                <?php if ($price): ?>
-                                    <div class="goods-exhibition-price"><?php echo $price; ?></div><?php endif; ?>
-                            </div>
-                            <div class="goods-exhibition-image-container">
-                                <img src="<?php echo $image; ?>" alt="<?php echo $name; ?>"
-                                    width="500" height="500"
-                                    class="goods-exhibition-image no-lightbox">
-                            </div>
-                        </div>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            </div>
-            <button class="goods-exhibition-arrow goods-exhibition-arrow-right"
-                aria-label="下一个"><span aria-hidden="true">&#10095;</span></button>
-        </div>
-    </div>
-    <?php
-}

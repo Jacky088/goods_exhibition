@@ -31,6 +31,7 @@
             mediaUploader = wp.media({
                 title: '选择产品图片',
                 button: { text: '使用此图片' },
+                library: { type: 'image' },
                 multiple: false
             });
             
@@ -77,6 +78,7 @@
             mediaUploaderPoster = wp.media({
                 title: '选择海报图片',
                 button: { text: '使用此图片' },
+                library: { type: 'image' },
                 multiple: false
             });
 
@@ -269,7 +271,9 @@
      * 初始化表单验证
      */
     function initFormValidation() {
-        $('form').on('submit', function(e) {
+        // 仅绑定产品表单：此前 $('form') 会匹配搜索/批量/分类等所有表单，
+        // 在非产品表单页面上 $('#product_name').val() 为 undefined 会导致 JS 报错
+        $('#goods-exhibition-product-form').on('submit', function(e) {
             var $nameField = $('#product_name');
             var $descriptionField = $('#product_description');
             var $categoryField = $('#product_category');

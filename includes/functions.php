@@ -11,70 +11,6 @@ if (!defined('WPINC')) {
 }
 
 /**
- * 获取单个产品信息
- *
- * @param int $product_id 产品ID
- * @return array|null 产品信息或null
- */
-function goods_exhibition_get_product($product_id)
-{
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'goods_exhibition';
-
-    $result = $wpdb->get_row(
-        $wpdb->prepare("SELECT * FROM $table_name WHERE id = %d", intval($product_id)),
-        ARRAY_A
-    );
-
-    // 记录数据库错误
-    if ($wpdb->last_error) {
-        error_log('Goods Exhibition Plugin Error: ' . $wpdb->last_error);
-    }
-
-    return $result;
-}
-
-/**
- * 获取所有产品
- *
- * @param int $limit 限制数量，-1表示不限制
- * @return array 产品列表
- */
-function goods_exhibition_get_products($limit = -1, $force_refresh = false)
-{
-    global $wpdb;
-
-    // 确保 $limit 是整数
-    $limit = intval($limit);
-    $cache_key = 'goods_exhibition_all_products_' . goods_exhibition_cache_version() . '_' . $limit;
-
-    if (!$force_refresh) {
-        $cached = get_transient($cache_key);
-        if (false !== $cached) {
-            return $cached;
-        }
-    }
-
-    $table_name = $wpdb->prefix . 'goods_exhibition';
-
-    // 使用prepare防止SQL注入
-    if ($limit > 0) {
-        $results = $wpdb->get_results(
-            $wpdb->prepare("SELECT * FROM $table_name ORDER BY id DESC LIMIT %d", $limit),
-            ARRAY_A
-        );
-    } else {
-        $results = $wpdb->get_results(
-            "SELECT * FROM $table_name ORDER BY id DESC",
-            ARRAY_A
-        );
-    }
-
-    set_transient($cache_key, $results, 12 * HOUR_IN_SECONDS);
-    return $results;
-}
-
-/**
  * 获取前端展示的所有产品（按类别排序）
  *
  * @param int $limit 限制数量
@@ -170,20 +106,6 @@ function goods_exhibition_is_new_product($created_at)
 }
 
 /**
- * 生成产品图片的HTML（不输出NEW标签，避免样式冲突）
- *
- * @param array $product 产品信息
- * @return string HTML代码
- */
-function goods_exhibition_get_product_image_html($product)
-{
-    $html = '<div class="goods-exhibition-image-container">';
-    $html .= '<img src="' . esc_url($product['image_url']) . '" alt="' . esc_attr($product['name']) . '" class="goods-exhibition-image">';
-    $html .= '</div>';
-    return $html;
-}
-
-/**
  * 检查插件上传目录是否存在并可写
  *
  * @return bool 是否可写
@@ -198,15 +120,9 @@ function goods_exhibition_check_upload_dir()
         }
     }
 
-    // 确保 .htaccess 保护存在（防止上传文件被当作脚本执行）
-    $htaccess_file = $upload_dir . '.htaccess';
-    if (!file_exists($htaccess_file)) {
-        $content = "Options -Indexes\n";
-        $content .= "<FilesMatch \"\\.(?i:php|phtml|php3|php4|php5|phar|cgi|pl|py|asp|aspx|jsp|sh)$\">\n";
-        $content .= "    Require all denied\n";
-        $content .= "</FilesMatch>\n";
-        @file_put_contents($htaccess_file, $content);
-    }
+    // 统一使用主文件中的保护函数写入 .htaccess（防止上传文件被当作脚本执行），
+    // 避免与 goods_exhibition_ensure_upload_protection() 维护两份相同逻辑
+    goods_exhibition_ensure_upload_protection();
 
     return is_writable($upload_dir);
 }

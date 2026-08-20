@@ -193,7 +193,8 @@ function goods_exhibition_shortcode_callback($atts)
 
     ob_start();
     foreach ($grouped_products as $category_name => $items) {
-        // 跳过所有海报产品分类（任意分类下，只要产品被标记为海报就不在前端分组列表中显示）
+        // 跳过"全部产品均为海报"的分类：整组不在分组列表中显示（仅出现在海报轮播）。
+        // 注意：混合分类中的海报产品仍会正常显示在分组列表中，并同时在海报轮播出现。
         $has_non_poster = false;
         foreach ($items as $it) {
             if (intval($it['is_poster']) !== 1) {

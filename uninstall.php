@@ -22,24 +22,26 @@ $wpdb->query("DROP TABLE IF EXISTS `{$table_name}`");
 $categories_table = $wpdb->prefix . 'goods_exhibition_categories';
 $wpdb->query("DROP TABLE IF EXISTS `{$categories_table}`");
 
-// 删除插件选项（含缓存版本号）
+// 删除插件选项（含缓存版本号与上传迁移标记）
 delete_option('goods_exhibition_version');
 delete_option('goods_exhibition_cache_version');
+delete_option('goods_exhibition_upload_migrated');
 
-// 清除所有相关的 transient 缓存（新版本号机制 + 兼容旧 key）
-delete_transient('goods_exhibition_poster_products');
-delete_transient('goods_exhibition_frontend_products_-1');
-delete_transient('goods_exhibition_all_products_-1');
+// 清除所有相关的 transient 缓存
+// 缓存键带有版本号与 limit 后缀（如 goods_exhibition_all_products_3_10），
+// 无法逐个枚举，直接按前缀清理 options 表中的全部 transient 记录（含 timeout 记录）。
+$wpdb->query(
+    "DELETE FROM {$wpdb->options}
+     WHERE option_name LIKE '\\_transient\\_goods\\_exhibition%'
+        OR option_name LIKE '\\_transient\\_timeout\\_goods\\_exhibition%'"
+);
 
-for ($i = 1; $i <= 100; $i++) {
-    delete_transient('goods_exhibition_all_products_' . $i);
-    delete_transient('goods_exhibition_frontend_products_' . $i);
-}
-
-// 删除插件上传目录及其中的文件
-$upload_dir = plugin_dir_path(__FILE__) . 'uploads/';
-if (is_dir($upload_dir)) {
-    $files = glob($upload_dir . '*');
+// 删除上传目录及其中的文件
+$remove_upload_dir = function ($dir) {
+    if (!is_dir($dir)) {
+        return;
+    }
+    $files = glob($dir . '*');
     if ($files) {
         foreach ($files as $file) {
             if (is_file($file)) {
@@ -48,9 +50,14 @@ if (is_dir($upload_dir)) {
         }
     }
     // 删除 .htaccess
-    $htaccess = $upload_dir . '.htaccess';
+    $htaccess = $dir . '.htaccess';
     if (file_exists($htaccess)) {
         unlink($htaccess);
     }
-    rmdir($upload_dir);
-}
+    rmdir($dir);
+};
+
+// 新版上传目录：wp-content/uploads/goods-exhibition/
+$remove_upload_dir(trailingslashit(wp_upload_dir()['basedir']) . 'goods-exhibition/');
+// 旧版上传目录（插件目录内，可能残留备份文件）
+$remove_upload_dir(plugin_dir_path(__FILE__) . 'uploads/');

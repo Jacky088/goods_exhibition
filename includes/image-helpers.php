@@ -93,11 +93,16 @@ function goods_exhibition_handle_image_upload($file_key, $allowed_extensions = n
     $file_name = wp_unique_filename($upload_dir, sanitize_file_name($file_info['filename']) . $file_extension);
     $upload_path = $upload_dir . $file_name;
 
+    // 根据图片用途确定最大边长：海报图 1920，产品图 720（README 推荐尺寸）
+    $max_dimension = ($file_key === 'poster_image') ? 1920 : 720;
+
     // 移动上传的文件
     if (move_uploaded_file($_FILES[$file_key]['tmp_name'], $upload_path)) {
+        // 超大图片等比缩小并压缩，减少前端加载体积（文件名与 URL 不变）
+        goods_exhibition_optimize_image($upload_path, $max_dimension);
         return array(
             'success' => true,
-            'url' => GOODS_EXHIBITION_URL . 'uploads/' . $file_name,
+            'url' => GOODS_EXHIBITION_UPLOAD_URL . $file_name,
             'error' => ''
         );
     } else {
@@ -107,6 +112,47 @@ function goods_exhibition_handle_image_upload($file_key, $allowed_extensions = n
             'error' => '上传图片失败，请再试一次。'
         );
     }
+}
+
+/**
+ * 优化上传的图片文件
+ *
+ * 超过最大边长的图片等比缩小后以质量 82 重新保存，避免用户直接上传
+ * 数 MB 的相机原图导致前端加载缓慢。
+ * 设计约束（保证对显示零影响）：
+ * - 仅缩小不放大、不裁切：页面上的裁切铺满仍由 CSS 完成，视觉不变
+ * - 尺寸未超标的图片原样保留，避免二次压缩损失
+ * - GIF 跳过（重新编码会丢失动画帧）
+ * - 图像库不可用或处理失败时保留原文件，不影响上传功能
+ *
+ * @param string $file_path 图片绝对路径
+ * @param int $max_dimension 最大边长（像素）
+ */
+function goods_exhibition_optimize_image($file_path, $max_dimension)
+{
+    // GIF 可能为动画，重新编码会丢失动画帧，跳过
+    if (strtolower(pathinfo($file_path, PATHINFO_EXTENSION)) === 'gif') {
+        return;
+    }
+
+    $editor = wp_get_image_editor($file_path);
+    if (is_wp_error($editor)) {
+        return; // GD/Imagick 不可用等情况，保留原图
+    }
+
+    $size = $editor->get_size();
+    if (empty($size) || ($size['width'] <= $max_dimension && $size['height'] <= $max_dimension)) {
+        return; // 尺寸未超标，保留原图
+    }
+
+    // 等比缩小到最大边长内（第三个参数 false 表示不裁切）
+    $resized = $editor->resize($max_dimension, $max_dimension, false);
+    if (is_wp_error($resized)) {
+        return;
+    }
+
+    $editor->set_quality(82);
+    $editor->save($file_path); // 覆盖保存到原路径，文件名与 URL 保持不变
 }
 
 /**
@@ -169,86 +215,4 @@ function goods_exhibition_validate_product_data($data)
     }
 
     return $errors;
-}
-
-/**
- * 日志记录函数
- *
- * @param string $message 日志消息
- * @param string $level 日志级别 (info, warning, error)
- */
-function goods_exhibition_log($message, $level = 'info')
-{
-    // 只在开启调试模式时记录日志
-    if (defined('GOODS_EXHIBITION_DEBUG') && GOODS_EXHIBITION_DEBUG) {
-        $timestamp = current_time('Y-m-d H:i:s');
-        $log_message = sprintf('[%s] [%s] %s', $timestamp, strtoupper($level), $message);
-        error_log($log_message);
-    }
-}
-
-/**
- * 获取文件大小的人类可读格式
- *
- * @param int $bytes 字节数
- * @return string 格式化的文件大小
- */
-function goods_exhibition_format_bytes($bytes)
-{
-    $units = array('B', 'KB', 'MB', 'GB', 'TB');
-    $bytes = max($bytes, 0);
-    $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-    $pow = min($pow, count($units) - 1);
-    $bytes /= (1 << (10 * $pow));
-    return round($bytes, 2) . ' ' . $units[$pow];
-}
-
-/**
- * 清理旧的未使用图片文件
- * 可以在后台任务中定期调用
- *
- * @return int 删除的文件数量
- */
-function goods_exhibition_cleanup_unused_images()
-{
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'goods_exhibition';
-    $upload_dir = GOODS_EXHIBITION_UPLOAD_DIR;
-
-    // 获取所有数据库中使用的图片URL
-    $used_images = array();
-    $products = $wpdb->get_results("SELECT image_url, poster_image_url FROM $table_name", ARRAY_A);
-
-    foreach ($products as $product) {
-        if (!empty($product['image_url'])) {
-            $used_images[] = basename($product['image_url']);
-        }
-        if (!empty($product['poster_image_url'])) {
-            $used_images[] = basename($product['poster_image_url']);
-        }
-    }
-
-    // 扫描上传目录
-    $deleted_count = 0;
-    if (is_dir($upload_dir)) {
-        $files = scandir($upload_dir);
-        foreach ($files as $file) {
-            if ($file === '.' || $file === '..' || $file === '.htaccess') {
-                continue;
-            }
-
-            $file_path = $upload_dir . $file;
-            if (is_file($file_path) && !in_array($file, $used_images)) {
-                // 只删除超过30天未使用的文件（额外的安全措施）
-                if (time() - filemtime($file_path) > 30 * DAY_IN_SECONDS) {
-                    if (unlink($file_path)) {
-                        $deleted_count++;
-                        goods_exhibition_log("已删除未使用的图片: $file", 'info');
-                    }
-                }
-            }
-        }
-    }
-
-    return $deleted_count;
 }
