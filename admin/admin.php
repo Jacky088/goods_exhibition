@@ -851,7 +851,7 @@ function goods_exhibition_render_add_product_tab()
                         <input type="hidden" name="poster_image_url" id="poster_image_url"
                             value="<?php echo esc_url($product['poster_image_url']); ?>">
                         <input type="button" id="upload_poster_image_button" class="button" value="从媒体库选择海报图片">
-                        <p class="description">推荐图片尺寸：1920x640像素（比例3:1），图片将自动裁切铺满展示区域</p>
+                        <p class="description">推荐图片尺寸：1920x720像素（比例16:6），图片将自动裁切铺满展示区域</p>
                     </td>
                 </tr>
             </table>
