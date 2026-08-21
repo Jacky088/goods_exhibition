@@ -1017,22 +1017,34 @@ function goods_exhibition_bulk_delete_products($product_ids)
         return 0;
     }
 
-    // 清理插件上传目录内的关联图片文件（媒体库/外链图片不受影响），按文件名去重
+    // 清理插件上传目录内的关联图片文件（旧版直传数据），按文件名去重；
+    // 媒体库图片收集后按 URL 去重，待引用检查决定是否删除
     $upload_dir = GOODS_EXHIBITION_UPLOAD_DIR;
     $upload_url = GOODS_EXHIBITION_UPLOAD_URL;
     $files_to_delete = array();
+    $media_urls = array();
     if (is_array($products)) {
         foreach ($products as $product) {
             foreach (array('image_url', 'poster_image_url') as $field) {
                 $url = isset($product[$field]) ? $product[$field] : '';
-                if (!empty($url) && strpos($url, $upload_url) === 0) {
+                if (empty($url)) {
+                    continue;
+                }
+                if (strpos($url, $upload_url) === 0) {
                     $files_to_delete[basename($url)] = true;
+                } else {
+                    $media_urls[$url] = true;
                 }
             }
         }
     }
     foreach (array_keys($files_to_delete) as $filename) {
         goods_exhibition_safe_delete_file($upload_dir . $filename);
+    }
+
+    // 媒体库孤儿图片清理：仅删除无任何其他引用的图片
+    foreach (array_keys($media_urls) as $media_url) {
+        goods_exhibition_maybe_delete_media_attachment($media_url);
     }
 
     // 整批只清理一次缓存
@@ -1073,6 +1085,12 @@ function goods_exhibition_delete_product($product_id)
             $file_name = basename($poster_image_url);
             $file_path = $upload_dir . $file_name;
             goods_exhibition_safe_delete_file($file_path);
+        }
+
+        // 媒体库孤儿图片清理：图片若不被其他产品/文章引用则一并从媒体库删除
+        goods_exhibition_maybe_delete_media_attachment($image_url);
+        if (!empty($poster_image_url) && $poster_image_url !== $image_url) {
+            goods_exhibition_maybe_delete_media_attachment($poster_image_url);
         }
 
         // 清除缓存

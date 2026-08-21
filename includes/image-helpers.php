@@ -216,3 +216,110 @@ function goods_exhibition_validate_product_data($data)
 
     return $errors;
 }
+
+/**
+ * 删除产品后清理媒体库孤儿图片
+ *
+ * 仅当图片同时满足以下全部条件时，才从媒体库强制删除（含所有尺寸副本）：
+ * 1. URL 指向本站媒体库（外部链接、插件私有目录的旧版直传文件不在此处理）；
+ * 2. 能通过 URL 反查到对应的媒体库附件；
+ * 3. 未被任何其他产品引用（产品表 image_url / poster_image_url）；
+ * 4. 未出现在任何文章/页面正文中（含回收站与修订版本，宁可误留不误删）；
+ * 5. 未被任何文章用作特色图片（_thumbnail_id）；
+ * 6. 未被任何 postmeta 字段引用（页面构建器、自定义字段等）；
+ * 7. 不是站点图标（site_icon）或当前主题自定义 Logo。
+ * 站点可通过 goods_exhibition_delete_unused_media 过滤器返回 false 整体关闭自动删除。
+ *
+ * @param string $image_url 产品图片或海报图片的 URL
+ * @return bool 是否实际删除了附件
+ */
+function goods_exhibition_maybe_delete_media_attachment($image_url)
+{
+    global $wpdb;
+
+    $image_url = trim((string) $image_url);
+    if (empty($image_url)) {
+        return false;
+    }
+
+    // 仅处理本站媒体库图片：外部链接与插件私有目录（旧版直传）不在此处理
+    $uploads = wp_upload_dir();
+    if (empty($uploads['baseurl']) || strpos($image_url, $uploads['baseurl']) !== 0) {
+        return false;
+    }
+    if (defined('GOODS_EXHIBITION_UPLOAD_URL') && strpos($image_url, GOODS_EXHIBITION_UPLOAD_URL) === 0) {
+        return false;
+    }
+
+    // URL → 附件 ID：优先按上传目录相对路径匹配 _wp_attached_file，失败再按 guid 兜底
+    $relative_path = ltrim(substr($image_url, strlen($uploads['baseurl'])), '/');
+    $attachment_id = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value = %s LIMIT 1",
+        $relative_path
+    ));
+    if (!$attachment_id) {
+        $attachment_id = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'attachment' AND guid = %s LIMIT 1",
+            $image_url
+        ));
+    }
+    if (!$attachment_id) {
+        return false; // 反查不到附件（可能是尺寸变体等），保守起见不删除
+    }
+
+    // 仍被其他产品引用则保留
+    $products_table = $wpdb->prefix . 'goods_exhibition';
+    $used_by_product = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM `{$products_table}` WHERE image_url = %s OR poster_image_url = %s",
+        $image_url,
+        $image_url
+    ));
+    if ($used_by_product > 0) {
+        return false;
+    }
+
+    // 被文章/页面正文引用则保留（不区分状态，回收站/修订内容同样视为引用）
+    $url_like = '%' . $wpdb->esc_like($image_url) . '%';
+    $used_in_content = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type <> 'attachment' AND post_content LIKE %s",
+        $url_like
+    ));
+    if ($used_in_content > 0) {
+        return false;
+    }
+
+    // 被用作特色图片则保留
+    $used_as_thumbnail = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_thumbnail_id' AND meta_value = %s",
+        $attachment_id
+    ));
+    if ($used_as_thumbnail > 0) {
+        return false;
+    }
+
+    // 被 postmeta 引用（页面构建器、自定义字段等）则保留；排除附件自身的 meta 记录
+    $used_in_meta = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE post_id <> %d AND meta_value LIKE %s",
+        $attachment_id,
+        $url_like
+    ));
+    if ($used_in_meta > 0) {
+        return false;
+    }
+
+    // 站点图标 / 主题 Logo 以附件 ID 全局引用（不在正文或 meta_value 中），单独排除
+    if ((int) get_option('site_icon') === $attachment_id) {
+        return false;
+    }
+    if ((int) get_theme_mod('custom_logo') === $attachment_id) {
+        return false;
+    }
+
+    // 逃生开关：站点可通过过滤器关闭自动删除
+    if (!apply_filters('goods_exhibition_delete_unused_media', true, $attachment_id, $image_url)) {
+        return false;
+    }
+
+    // 无任何引用：强制删除附件（含所有尺寸副本）
+    return (bool) wp_delete_attachment($attachment_id, true);
+}

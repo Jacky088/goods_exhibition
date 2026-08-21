@@ -402,6 +402,7 @@
     left: 0;
     right: 0;
     display: flex;
+    flex-wrap: wrap; /* 允许价格换行至标题下方 */
     align-items: center;
     gap: 16px;
     /* 底部预留圆点指示器的空间，避免圆点叠在描述文字上 */
@@ -446,7 +447,9 @@
     color: #ff6b4a;
     white-space: nowrap;
     flex-shrink: 0;
-    margin-left: auto;
+    /* 独占一行强制换行：价格位于标题下方，左对齐 */
+    flex-basis: 100%;
+    margin-left: 0;
     text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
@@ -503,10 +506,12 @@
    手机端海报响应式
    ======================================== */
 @media (max-width: 480px) {
-    .goods-exhibition-wrapper.poster-slider .poster-content {
-        /* 底部同样预留圆点空间（移动端圆点 bottom:12px、高5px） */
-        padding: 10px 14px 26px;
-        gap: 8px;
+    /* 注意：选择器须与桌面规则 .goods-exhibition-content.poster-content 同特异性，
+       此前低特异性导致 padding/gap 被桌面值覆盖，移动端文字块偏高 */
+    .goods-exhibition-wrapper.poster-slider .goods-exhibition-content.poster-content {
+        /* 文字块收紧置于中间靠下区域；底部 26px 预留圆点空间（移动端圆点 bottom:12px、高5px） */
+        padding: 5px 14px 26px;
+        gap: 4px;
     }
 
     .goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-title {
@@ -519,6 +524,8 @@
 
     .goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-price {
         font-size: 1rem !important;
+        /* 抵消基础 .goods-exhibition-price 的 4px 底边距，避免文字块增高 */
+        margin-bottom: 0;
     }
 
     .goods-exhibition-wrapper.poster-slider .goods-exhibition-arrow {
