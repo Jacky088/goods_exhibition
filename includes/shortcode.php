@@ -85,7 +85,7 @@ function goods_exhibition_render_poster_card($poster, $is_first = false)
     // 构建海报内部内容：图片容器包含图片和文字叠加
     $inner = '<div class="goods-exhibition-poster-img-wrap">';
     $inner .= '<img src="' . $image_url . '" alt="' . esc_attr($poster['name']) . '"'
-        . ' width="1920" height="640" loading="' . $loading_attr . '"' . $priority_attr
+        . ' width="1920" height="720" loading="' . $loading_attr . '"' . $priority_attr
         . ' class="goods-exhibition-poster-img">';
     $inner .= '<div class="goods-exhibition-content poster-content">';
     $inner .= '<h3 class="goods-exhibition-title">' . $name . '</h3>';

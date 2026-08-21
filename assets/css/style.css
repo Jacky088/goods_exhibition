@@ -366,7 +366,7 @@
 .goods-exhibition-poster-img-wrap {
     position: relative;
     width: 100%;
-    aspect-ratio: 3 / 1;
+    aspect-ratio: 16 / 6;
     overflow: hidden;
     flex-shrink: 0;
     min-height: 0;
@@ -522,8 +522,8 @@
     }
 
     .goods-exhibition-poster-img-wrap {
-        /* 与桌面端严格统一 3:1，不设最低高度 */
-        aspect-ratio: 3 / 1;
+        /* 与桌面端严格统一 16:6，不设最低高度 */
+        aspect-ratio: 16 / 6;
     }
 
     .goods-exhibition-wrapper.poster-slider .goods-exhibition-poster-img {
