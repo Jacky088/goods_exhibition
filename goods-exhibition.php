@@ -3,7 +3,7 @@
  * Plugin Name: 好物页面插件
  * Plugin URI: https://github.com/Jacky088/goods_exhibition
  * Description: 一个展示好物商品的WordPress插件（已通过安全审查和优化）
- * Version: 1.4.6
+ * Version: 1.4.7
  * Author: 木木
  * Author URI: https://github.com/Jacky088/goods_exhibition
  * License: GPL v2 or later
@@ -19,7 +19,7 @@ if (!defined('WPINC')) {
 }
 
 // 定义插件版本
-define('GOODS_EXHIBITION_VERSION', '1.4.6');
+define('GOODS_EXHIBITION_VERSION', '1.4.7');
 // 定义插件路径
 define('GOODS_EXHIBITION_PATH', plugin_dir_path(__FILE__));
 // 定义插件URL
@@ -288,14 +288,31 @@ function goods_exhibition_load_textdomain()
 add_action('plugins_loaded', 'goods_exhibition_load_textdomain');
 
 /**
+ * 获取资源文件的缓存版本号（基于文件修改时间）
+ *
+ * 热更新场景（直接覆盖文件、不修改插件版本号）下，
+ * 文件修改时间变化会自动使浏览器缓存的 CSS/JS 失效，无需手动升版本。
+ * 读取失败时回退到插件版本号。
+ *
+ * @param string $rel_path 相对插件目录的文件路径
+ * @return string|int 用于 wp_enqueue_* 的 version 参数
+ */
+function goods_exhibition_asset_version($rel_path)
+{
+    $file = GOODS_EXHIBITION_PATH . $rel_path;
+    $mtime = is_readable($file) ? filemtime($file) : false;
+    return $mtime !== false ? $mtime : GOODS_EXHIBITION_VERSION;
+}
+
+/**
  * 注册插件的样式和脚本
  */
 function goods_exhibition_enqueue_scripts()
 {
     global $post;
     if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'goods_exhibition')) {
-        wp_enqueue_style('goods-exhibition-style', GOODS_EXHIBITION_URL . 'assets/css/style.css', array(), GOODS_EXHIBITION_VERSION);
-        wp_enqueue_script('goods-exhibition-script', GOODS_EXHIBITION_URL . 'assets/js/script.js', array(), GOODS_EXHIBITION_VERSION, true);
+        wp_enqueue_style('goods-exhibition-style', GOODS_EXHIBITION_URL . 'assets/css/style.css', array(), goods_exhibition_asset_version('assets/css/style.css'));
+        wp_enqueue_script('goods-exhibition-script', GOODS_EXHIBITION_URL . 'assets/js/script.js', array(), goods_exhibition_asset_version('assets/js/script.js'), true);
     }
 }
 add_action('wp_enqueue_scripts', 'goods_exhibition_enqueue_scripts');
@@ -308,9 +325,9 @@ function goods_exhibition_admin_enqueue_scripts($hook)
     if (strpos($hook, 'goods-exhibition') === false) {
         return;
     }
-    wp_enqueue_style('goods-exhibition-admin-style', GOODS_EXHIBITION_URL . 'assets/css/admin.css', array(), GOODS_EXHIBITION_VERSION);
+    wp_enqueue_style('goods-exhibition-admin-style', GOODS_EXHIBITION_URL . 'assets/css/admin.css', array(), goods_exhibition_asset_version('assets/css/admin.css'));
     wp_enqueue_script('jquery-ui-sortable');
-    wp_enqueue_script('goods-exhibition-admin-script', GOODS_EXHIBITION_URL . 'assets/js/admin.js', array('jquery', 'jquery-ui-sortable'), GOODS_EXHIBITION_VERSION, true);
+    wp_enqueue_script('goods-exhibition-admin-script', GOODS_EXHIBITION_URL . 'assets/js/admin.js', array('jquery', 'jquery-ui-sortable'), goods_exhibition_asset_version('assets/js/admin.js'), true);
     wp_localize_script('goods-exhibition-admin-script', 'goodsExhibitionAdmin', array(
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('goods_exhibition_sort_nonce'),

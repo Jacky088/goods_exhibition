@@ -400,7 +400,8 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 14px 24px;
+    /* 底部预留圆点指示器的空间，避免圆点叠在描述文字上 */
+    padding: 14px 24px 34px;
     background: linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%);
     text-shadow: none;
     max-width: none;
@@ -415,7 +416,11 @@
     font-weight: 700 !important;
     white-space: nowrap !important;
     margin: 0 !important;
-    flex-shrink: 0;
+    /* 允许标题收缩并显示省略号，防止长标题把价格挤出屏幕（价格保持不收缩） */
+    min-width: 0;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
     text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 
@@ -495,7 +500,8 @@
    ======================================== */
 @media (max-width: 480px) {
     .goods-exhibition-wrapper.poster-slider .poster-content {
-        padding: 10px 14px;
+        /* 底部同样预留圆点空间（移动端圆点 bottom:12px、高5px） */
+        padding: 10px 14px 26px;
         gap: 8px;
     }
 
@@ -516,8 +522,8 @@
     }
 
     .goods-exhibition-poster-img-wrap {
+        /* 与桌面端严格统一 3:1，不设最低高度 */
         aspect-ratio: 3 / 1;
-        min-height: 180px;
     }
 
     .goods-exhibition-wrapper.poster-slider .goods-exhibition-poster-img {

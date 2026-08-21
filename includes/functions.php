@@ -20,7 +20,7 @@ function goods_exhibition_get_frontend_products($limit = -1)
 {
     // 确保 $limit 是整数
     $limit = intval($limit);
-    $cache_key = 'goods_exhibition_frontend_products_' . goods_exhibition_cache_version() . '_' . $limit;
+    $cache_key = 'goods_exhibition_frontend_products_' . goods_exhibition_cache_version() . '_' . $limit . '_' . goods_exhibition_code_stamp();
     $cached = get_transient($cache_key);
     if (false !== $cached) {
         return $cached;
@@ -72,7 +72,7 @@ function goods_exhibition_get_frontend_products($limit = -1)
  */
 function goods_exhibition_get_poster_products()
 {
-    $cache_key = 'goods_exhibition_poster_products_' . goods_exhibition_cache_version();
+    $cache_key = 'goods_exhibition_poster_products_' . goods_exhibition_cache_version() . '_' . goods_exhibition_code_stamp();
     $cached = get_transient($cache_key);
     if (false !== $cached) {
         return $cached;
@@ -81,8 +81,10 @@ function goods_exhibition_get_poster_products()
     global $wpdb;
     $table_name = $wpdb->prefix . 'goods_exhibition';
 
+    // 排序与商品列表保持一致（跟随后台拖拽保存的 sort_order，id DESC 兜底）；
+    // 最多取 6 张，避免标记过多海报时前端加载几十张 1920px 大图
     $results = $wpdb->get_results(
-        "SELECT * FROM $table_name WHERE is_poster = 1 AND poster_image_url != '' ORDER BY id DESC",
+        "SELECT * FROM $table_name WHERE is_poster = 1 AND poster_image_url != '' ORDER BY sort_order ASC, id DESC LIMIT 6",
         ARRAY_A
     );
 
@@ -189,5 +191,18 @@ function goods_exhibition_flush_cache()
     if (function_exists('wp_cache_flush_group')) {
         wp_cache_flush_group('goods_exhibition');
     }
+}
+
+/**
+ * 数据缓存键的代码戳（本文件的修改时间）
+ *
+ * 热更新（直接覆盖文件、不升插件版本号）改动了查询逻辑时，
+ * 代码戳变化使旧 transient 立即失效，无需等待 12 小时过期，也无需手动清缓存。
+ *
+ * @return int
+ */
+function goods_exhibition_code_stamp()
+{
+    return filemtime(__FILE__);
 }
 

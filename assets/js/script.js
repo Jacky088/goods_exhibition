@@ -105,11 +105,20 @@
 
     /**
      * 初始化海报幻灯片：自动轮播 + 圆点指示器 + 箭头
+     * 支持页面存在多个海报轮播实例（多个短代码场景），逐个初始化
      */
     function initPosterSlider() {
-        var wrapper = document.querySelector('.goods-exhibition-wrapper.poster-slider');
-        if (!wrapper) return;
+        var wrappers = document.querySelectorAll('.goods-exhibition-wrapper.poster-slider');
 
+        wrappers.forEach(function (wrapper) {
+            initSinglePosterSlider(wrapper);
+        });
+    }
+
+    /**
+     * 初始化单个海报轮播实例
+     */
+    function initSinglePosterSlider(wrapper) {
         var track = wrapper.querySelector('.poster-slider-track');
         if (!track) return;
 
@@ -122,6 +131,7 @@
         var currentIndex = 0;
         var autoPlayInterval = null;
         var autoPlayDelay = 5000; // 5秒
+        var isAutoScrolling = false; // 程序化平滑滚动进行中标记
 
         /**
          * 跳转到指定索引的海报
@@ -132,25 +142,34 @@
             currentIndex = index;
 
             var slideWidth = items[0].offsetWidth;
+            // 标记程序化滚动：滚动中途的 scroll 事件不再回写索引，防止圆点回闪
+            isAutoScrolling = true;
             track.scrollTo({ left: slideWidth * currentIndex, behavior: 'smooth' });
 
             updateDots();
         }
 
         /**
-         * 更新圆点指示器状态
+         * 更新圆点指示器状态（同步 aria-selected 供屏幕阅读器识别）
          */
         function updateDots() {
             dots.forEach(function (dot, i) {
-                dot.classList.toggle('active', i === currentIndex);
+                var isActive = i === currentIndex;
+                dot.classList.toggle('active', isActive);
+                dot.setAttribute('aria-selected', isActive ? 'true' : 'false');
             });
         }
+
+        // 系统开启"减弱动态效果"的用户不自动轮播（箭头/圆点手动操作不受影响）
+        var prefersReducedMotion = window.matchMedia
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         /**
          * 开始自动轮播
          */
         function startAutoPlay() {
             stopAutoPlay();
+            if (prefersReducedMotion) return;
             autoPlayInterval = setInterval(function () {
                 goToSlide(currentIndex + 1);
             }, autoPlayDelay);
@@ -185,7 +204,13 @@
             if (scrollTimeout) {
                 clearTimeout(scrollTimeout);
             }
-            scrollTimeout = setTimeout(updateIndexFromScroll, 80);
+            scrollTimeout = setTimeout(function () {
+                if (isAutoScrolling) {
+                    // 滚动事件停止触发，说明程序化滚动已结束：解除标记后校正索引
+                    isAutoScrolling = false;
+                }
+                updateIndexFromScroll();
+            }, 100);
         });
 
         // 箭头点击
