@@ -66,6 +66,49 @@ function goods_exhibition_get_frontend_products($limit = -1)
 }
 
 /**
+ * 按后台设置的自定义顺序排列海报产品
+ *
+ * 顺序存储在选项 goods_exhibition_poster_order 中（产品 ID 数组）。
+ * 未设置自定义顺序时原样返回，完全不改变原有排序行为；
+ * 设置后：列表内的海报按指定顺序排列，不在列表中的（如新加入的海报）
+ * 保持其原有相对次序并追加到末尾，保证新增海报不会"插队"。
+ *
+ * @param array $rows 海报产品行数据（已按默认规则排序）
+ * @return array 重排后的海报产品行数据
+ */
+function goods_exhibition_apply_poster_order($rows)
+{
+    if (!is_array($rows) || count($rows) < 2) {
+        return $rows;
+    }
+
+    $saved = get_option('goods_exhibition_poster_order', array());
+    if (empty($saved) || !is_array($saved)) {
+        return $rows; // 未设置自定义顺序：保持原有排序
+    }
+
+    // 产品 ID => 期望位置
+    $position = array();
+    foreach (array_values($saved) as $index => $id) {
+        $position[intval($id)] = $index;
+    }
+
+    $ordered = array();
+    $rest = array();
+    foreach ($rows as $row) {
+        $id = intval($row['id']);
+        if (isset($position[$id])) {
+            $ordered[$position[$id]] = $row;
+        } else {
+            $rest[] = $row;
+        }
+    }
+
+    ksort($ordered);
+    return array_merge(array_values($ordered), $rest);
+}
+
+/**
  * 获取标记为海报且有海报图片的产品
  *
  * @return array
@@ -81,12 +124,16 @@ function goods_exhibition_get_poster_products()
     global $wpdb;
     $table_name = $wpdb->prefix . 'goods_exhibition';
 
-    // 排序与商品列表保持一致（跟随后台拖拽保存的 sort_order，id DESC 兜底）；
-    // 最多取 6 张，避免标记过多海报时前端加载几十张 1920px 大图
+    // 默认排序与商品列表保持一致（跟随后台拖拽保存的 sort_order，id DESC 兜底）；
+    // 若后台设置了自定义海报顺序，则由 goods_exhibition_apply_poster_order() 在 PHP 层重排。
+    // 先取出全部海报（数量有限）再重排并截取前 6 张，避免标记过多海报时前端加载几十张 1920px 大图
     $results = $wpdb->get_results(
-        "SELECT * FROM $table_name WHERE is_poster = 1 AND poster_image_url != '' ORDER BY sort_order ASC, id DESC LIMIT 6",
+        "SELECT * FROM $table_name WHERE is_poster = 1 AND poster_image_url != '' ORDER BY sort_order ASC, id DESC",
         ARRAY_A
     );
+
+    $results = goods_exhibition_apply_poster_order($results);
+    $results = array_slice($results, 0, GOODS_EXHIBITION_POSTER_LIMIT);
 
     set_transient($cache_key, $results, 12 * HOUR_IN_SECONDS);
     return $results;

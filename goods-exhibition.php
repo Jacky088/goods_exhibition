@@ -3,7 +3,7 @@
  * Plugin Name: 好物页面插件
  * Plugin URI: https://github.com/Jacky088/goods_exhibition
  * Description: 一个展示好物商品的WordPress插件（已通过安全审查和优化）
- * Version: 1.4.9
+ * Version: 1.6.1
  * Author: 木木
  * Author URI: https://github.com/Jacky088/goods_exhibition
  * License: GPL v2 or later
@@ -19,11 +19,14 @@ if (!defined('WPINC')) {
 }
 
 // 定义插件版本
-define('GOODS_EXHIBITION_VERSION', '1.4.9');
+define('GOODS_EXHIBITION_VERSION', '1.6.1');
 // 定义插件路径
 define('GOODS_EXHIBITION_PATH', plugin_dir_path(__FILE__));
 // 定义插件URL
 define('GOODS_EXHIBITION_URL', plugin_dir_url(__FILE__));
+
+// 前端海报轮播最多展示的数量（后台「海报排序」据此提示哪些海报会超出展示范围）
+define('GOODS_EXHIBITION_POSTER_LIMIT', 6);
 
 // 插件上传目录定义
 // 重要：图片必须存储在 wp-content/uploads/goods-exhibition/（而非插件目录内），
@@ -436,6 +439,61 @@ function goods_exhibition_ajax_bulk_move()
     wp_send_json_success(array('moved' => $moved, 'message' => "已将 {$moved} 个产品移至「{$target_category}」"));
 }
 add_action('wp_ajax_goods_exhibition_bulk_move', 'goods_exhibition_ajax_bulk_move');
+
+/**
+ * AJAX: 保存海报自定义排序
+ *
+ * 顺序以选项 goods_exhibition_poster_order 存储（产品 ID 数组），
+ * 与产品列表按分类拖拽保存的 sort_order 完全独立，互不影响。
+ */
+function goods_exhibition_ajax_save_poster_sort()
+{
+    check_ajax_referer('goods_exhibition_sort_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('权限不足');
+    }
+
+    $order = isset($_POST['order']) ? $_POST['order'] : array();
+    if (empty($order) || !is_array($order)) {
+        wp_send_json_error('无效数据');
+    }
+
+    // 前置清洗：去重、去掉无效值，保证为整型 ID 列表
+    $order = array_values(array_unique(array_filter(array_map('intval', (array) $order))));
+    if (empty($order)) {
+        wp_send_json_error('无效数据');
+    }
+
+    // 仅保留真实存在的海报产品，杜绝写入任意 ID
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'goods_exhibition';
+    $placeholders = implode(',', array_fill(0, count($order), '%d'));
+    $valid_ids = $wpdb->get_col(
+        $wpdb->prepare(
+            "SELECT id FROM `{$table_name}` WHERE is_poster = 1 AND poster_image_url != '' AND id IN ({$placeholders})",
+            ...$order
+        )
+    );
+    $valid_ids = array_map('intval', (array) $valid_ids);
+
+    // 按提交顺序过滤，保持用户拖拽后的顺序
+    $final = array();
+    foreach ($order as $id) {
+        if (in_array($id, $valid_ids, true)) {
+            $final[] = $id;
+        }
+    }
+
+    if (empty($final)) {
+        wp_send_json_error('无效数据');
+    }
+
+    update_option('goods_exhibition_poster_order', $final);
+    goods_exhibition_flush_cache();
+    wp_send_json_success('海报顺序已保存');
+}
+add_action('wp_ajax_goods_exhibition_save_poster_sort', 'goods_exhibition_ajax_save_poster_sort');
 
 /*
  * 历史说明：v1.3.x 曾在 wp_body_open 钩子输出"海报展示"幻灯片，

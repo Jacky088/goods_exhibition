@@ -53,6 +53,9 @@ function goods_exhibition_admin_router()
         case 'categories':
             goods_exhibition_render_categories_tab();
             break;
+        case 'posters':
+            goods_exhibition_render_poster_sort_tab();
+            break;
         case 'list':
         default:
             goods_exhibition_render_product_list_tab();
@@ -88,6 +91,9 @@ function goods_exhibition_handle_admin_actions()
         goods_exhibition_handle_product_form_action();
     } elseif ($current_tab === 'categories') {
         goods_exhibition_handle_category_actions();
+    } elseif ($current_tab === 'posters') {
+        // 海报排序通过 AJAX 保存，此处无需处理表单动作
+        return;
     } else {
         goods_exhibition_handle_list_actions();
     }
@@ -333,6 +339,12 @@ function goods_exhibition_handle_product_form_action()
         );
 
         if ($is_edit) {
+            // 保存前先取旧记录，用于比对图片是否被删除/替换
+            $old_product = $wpdb->get_row(
+                $wpdb->prepare("SELECT image_url, poster_image_url FROM `{$table_name}` WHERE id = %d", $edit_id),
+                ARRAY_A
+            );
+
             $result = $wpdb->update(
                 $table_name,
                 $data,
@@ -342,6 +354,13 @@ function goods_exhibition_handle_product_form_action()
                 goods_exhibition_admin_notice('error', esc_html('更新产品时出错: ' . $wpdb->last_error));
                 return;
             }
+
+            // 图片被删除或替换时，清理旧图片（媒体库图片仅在无其它引用时删除），避免孤儿图片
+            if (is_array($old_product)) {
+                goods_exhibition_cleanup_removed_image($old_product['image_url'], $final_image_url);
+                goods_exhibition_cleanup_removed_image($old_product['poster_image_url'], $final_poster_image_url);
+            }
+
             goods_exhibition_flush_cache();
             goods_exhibition_admin_redirect('updated');
         } else {
@@ -456,6 +475,8 @@ function goods_exhibition_render_admin_header($current_tab)
                class="nav-tab <?php echo $current_tab === 'add' ? 'nav-tab-active' : ''; ?>">添加新产品</a>
             <a href="<?php echo admin_url('admin.php?page=goods-exhibition&tab=categories'); ?>"
                class="nav-tab <?php echo $current_tab === 'categories' ? 'nav-tab-active' : ''; ?>">分类管理</a>
+            <a href="<?php echo admin_url('admin.php?page=goods-exhibition&tab=posters'); ?>"
+               class="nav-tab <?php echo $current_tab === 'posters' ? 'nav-tab-active' : ''; ?>">海报排序</a>
         </nav>
     <?php
 }
@@ -821,6 +842,10 @@ function goods_exhibition_render_add_product_tab()
                         <input type="hidden" name="product_image_url" id="product_image_url"
                             value="<?php echo esc_url($product['image_url']); ?>">
                         <input type="button" id="upload_image_button" class="button" value="从媒体库选择图片">
+                        <button type="button" class="button goods-image-delete-btn"
+                            data-target="#product_image_url" data-preview=".product-image-preview"
+                            data-file="#product_image" data-label="产品图片" data-required="1"
+                            <?php echo empty($product['image_url']) ? 'style="display:none;"' : ''; ?>>删除图片</button>
                         <p class="description">推荐图片尺寸：720x720像素（1:1正方形），图片将等比缩放显示在卡片中</p>
                     </td>
                 </tr>
@@ -851,6 +876,10 @@ function goods_exhibition_render_add_product_tab()
                         <input type="hidden" name="poster_image_url" id="poster_image_url"
                             value="<?php echo esc_url($product['poster_image_url']); ?>">
                         <input type="button" id="upload_poster_image_button" class="button" value="从媒体库选择海报图片">
+                        <button type="button" class="button goods-image-delete-btn"
+                            data-target="#poster_image_url" data-preview=".poster-image-preview"
+                            data-file="#poster_image" data-label="海报图片"
+                            <?php echo empty($product['poster_image_url']) ? 'style="display:none;"' : ''; ?>>删除图片</button>
                         <p class="description">推荐图片尺寸：1920x720像素（比例16:6），图片将自动裁切铺满展示区域</p>
                     </td>
                 </tr>
@@ -863,6 +892,19 @@ function goods_exhibition_render_add_product_tab()
                 <?php endif; ?>
             </p>
         </form>
+
+        <!-- 删除图片二次确认弹窗 -->
+        <div id="goods-image-delete-modal" style="display:none;">
+            <div class="goods-image-modal-overlay"></div>
+            <div class="goods-image-modal-content">
+                <h3 id="goods-image-delete-title">删除图片</h3>
+                <div id="goods-image-delete-body"></div>
+                <p class="submit">
+                    <button type="button" class="button button-primary goods-image-delete-confirm">确认删除</button>
+                    <button type="button" class="button goods-image-modal-close">取消</button>
+                </p>
+            </div>
+        </div>
     </div>
     <?php
 }
@@ -980,6 +1022,70 @@ function goods_exhibition_render_categories_tab()
                 </form>
             </div>
         </div>
+    </div>
+    <?php
+}
+
+/**
+ * 海报排序 Tab 内容
+ *
+ * 展示所有「已标记为海报且已设置海报图片」的产品，支持拖动调整首页轮播顺序。
+ * 顺序独立存储于选项 goods_exhibition_poster_order，与产品列表的 sort_order 互不影响。
+ */
+function goods_exhibition_render_poster_sort_tab()
+{
+    // 显示动作处理结果提示（本页排序通过 AJAX 保存，这里主要为保持结构一致）
+    goods_exhibition_render_admin_notices();
+
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'goods_exhibition';
+
+    $display_limit = (int) GOODS_EXHIBITION_POSTER_LIMIT;
+
+    // 与前端一致：仅取标记为海报且有海报图片的产品，默认按 sort_order/id 排序后应用自定义顺序
+    $posters = $wpdb->get_results(
+        "SELECT id, name, poster_image_url, category FROM `{$table_name}`
+         WHERE is_poster = 1 AND poster_image_url != ''
+         ORDER BY sort_order ASC, id DESC",
+        ARRAY_A
+    );
+    $posters = goods_exhibition_apply_poster_order($posters);
+    ?>
+    <div class="goods-exhibition-tab-content">
+        <h2>海报排序</h2>
+        <p class="description">
+            拖动下方海报可调整首页轮播顺序。前端最多展示 <strong><?php echo $display_limit; ?></strong> 张，
+            将按此顺序取前 <strong><?php echo $display_limit; ?></strong> 张；未在自定义顺序中的新海报会自动排在末尾。
+        </p>
+
+        <?php if (empty($posters)): ?>
+            <div class="notice notice-info">
+                <p>暂无海报。请先在「添加新产品 / 编辑产品」中勾选「标记为海报」并设置海报图片。</p>
+            </div>
+        <?php else: ?>
+            <p class="goods-poster-sort-hint description" data-limit="<?php echo esc_attr($display_limit); ?>">&#x2195; 按住左侧手柄拖动即可排序，松开后自动保存。</p>
+            <ul class="goods-poster-sort-list" id="goods-poster-sort-list">
+                <?php foreach ($posters as $index => $poster): ?>
+                    <li class="goods-poster-sort-item" data-id="<?php echo esc_attr($poster['id']); ?>">
+                        <span class="goods-drag-handle" title="按住拖动排序" aria-label="拖动排序">&#x2630;</span>
+                        <span class="goods-poster-sort-order"><?php echo $index + 1; ?></span>
+                        <span class="goods-poster-sort-thumb" title="按住拖动排序">
+                            <img src="<?php echo esc_url($poster['poster_image_url']); ?>" alt="<?php echo esc_attr($poster['name']); ?>" loading="lazy">
+                        </span>
+                        <span class="goods-poster-sort-info">
+                            <strong><?php echo esc_html($poster['name']); ?></strong>
+                            <?php if (!empty($poster['category'])): ?>
+                                <span class="goods-category-badge"><?php echo esc_html($poster['category']); ?></span>
+                            <?php endif; ?>
+                        </span>
+                        <?php if ($index >= $display_limit): ?>
+                            <span class="goods-poster-sort-badge">超出展示范围</span>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <p class="goods-poster-sort-status description"></p>
+        <?php endif; ?>
     </div>
     <?php
 }

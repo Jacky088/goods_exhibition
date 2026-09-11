@@ -323,3 +323,37 @@ function goods_exhibition_maybe_delete_media_attachment($image_url)
     // 无任何引用：强制删除附件（含所有尺寸副本）
     return (bool) wp_delete_attachment($attachment_id, true);
 }
+
+/**
+ * 清理产品中被移除/替换掉的旧图片
+ *
+ * 在编辑产品保存成功后调用：当某个图片字段的旧值与新值不同（即用户删除或替换了图片）时，
+ * 同步清理旧图片，避免在媒体库/上传目录中留下无人引用的孤儿文件。
+ *
+ * 处理策略：
+ * - 插件私有目录（旧版直传）的文件：直接安全删除；
+ * - 本站媒体库图片：交给 goods_exhibition_maybe_delete_media_attachment() 判断，
+ *   仅在无任何其它引用时才从媒体库删除（含所有尺寸副本），保守避免误删。
+ *
+ * @param string $old_url 保存前的图片 URL
+ * @param string $new_url 保存后的图片 URL
+ */
+function goods_exhibition_cleanup_removed_image($old_url, $new_url)
+{
+    $old_url = trim((string) $old_url);
+    $new_url = trim((string) $new_url);
+
+    // 旧值为空（本来就没图片）或新旧一致（未改动）时无需清理
+    if ($old_url === '' || $old_url === $new_url) {
+        return;
+    }
+
+    // 插件私有目录中的旧版直传文件：直接删除
+    if (defined('GOODS_EXHIBITION_UPLOAD_URL') && strpos($old_url, GOODS_EXHIBITION_UPLOAD_URL) === 0) {
+        goods_exhibition_safe_delete_file(GOODS_EXHIBITION_UPLOAD_DIR . basename($old_url));
+        return;
+    }
+
+    // 媒体库图片：仅在无其它引用时删除
+    goods_exhibition_maybe_delete_media_attachment($old_url);
+}
