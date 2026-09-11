@@ -654,3 +654,40 @@ input[type="file"] {
     margin: 10px 0 0;
     font-size: 13px;
 }
+
+/* ========================================
+   分类拖拽排序
+   ======================================== */
+.goods-cat-sort-hint {
+    margin: 8px 0 10px;
+    color: #2271b1;
+}
+
+.goods-cat-sort-handle-cell {
+    width: 40px;
+    text-align: center;
+}
+
+.goods-cat-sort-order {
+    text-align: center;
+    color: #50575e;
+    font-weight: 600;
+}
+
+/* 表格行拖拽：拖起克隆体与占位块 */
+.goods-exhibition-cat-list tbody tr.ui-sortable-helper {
+    display: table;
+    width: 100%;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.goods-exhibition-cat-list tbody tr.ui-sortable-helper td {
+    background: #fff;
+}
+
+.goods-exhibition-cat-list tbody tr.goods-sort-placeholder td {
+    background: #e8f4fd !important;
+    border-top: 2px dashed #2271b1;
+    border-bottom: 2px dashed #2271b1;
+}

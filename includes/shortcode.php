@@ -188,18 +188,9 @@ function goods_exhibition_shortcode_callback($atts)
 
     ob_start();
     foreach ($grouped_products as $category_name => $items) {
-        // 跳过"全部产品均为海报"的分类：整组不在分组列表中显示（仅出现在海报轮播）。
-        // 注意：混合分类中的海报产品仍会正常显示在分组列表中，并同时在海报轮播出现。
-        $has_non_poster = false;
-        foreach ($items as $it) {
-            if (intval($it['is_poster']) !== 1) {
-                $has_non_poster = true;
-                break;
-            }
-        }
-        if (!$has_non_poster) {
-            continue;
-        }
+        // 说明：已取消"全部产品均为海报的分类整组隐藏"规则。
+        // 现在所有分类（含全部为海报的分类）都会正常显示在分组列表中；
+        // 标记为海报的产品仍会同时出现在顶部的海报轮播中（轮播最多展示 6 张）。
         ?>
         <h2 class="goods-exhibition-category-title"><?php echo esc_html($category_name); ?></h2>
         <div class="goods-exhibition-wrapper">

@@ -13,6 +13,7 @@
         initDragSort();
         initPosterSort();
         initCategoryEdit();
+        initCategorySort();
     });
     
     /**
@@ -212,11 +213,9 @@
             e.preventDefault();
             var id = $(this).data('id');
             var name = $(this).data('name');
-            var sort = $(this).data('sort');
 
             $('#edit_cat_id').val(id);
             $('#edit_category_name').val(name);
-            $('#edit_category_sort').val(sort);
             $modal.show();
         });
 
@@ -227,6 +226,51 @@
         $(document).on('keydown', function(e) {
             if (e.key === 'Escape' && $modal.is(':visible')) {
                 $modal.hide();
+            }
+        });
+    }
+
+    /**
+     * 初始化分类拖拽排序
+     *
+     * 拖动分类列表的行手柄即可调整顺序，松开自动保存；
+     * 排序值即位置，前端分类展示顺序随之同步。
+     */
+    function initCategorySort() {
+        var $tbody = $('#goods-category-sort-body');
+        if (!$tbody.length) return;
+
+        $tbody.sortable({
+            handle: '.goods-drag-handle',
+            items: '> tr',
+            axis: 'y',
+            tolerance: 'pointer',
+            forcePlaceholderSize: true,
+            opacity: 0.7,
+            cursor: 'grabbing',
+            placeholder: 'goods-sort-placeholder',
+            update: function() {
+                var order = [];
+                $tbody.find('tr').each(function(index) {
+                    order.push($(this).data('id'));
+                    $(this).find('.goods-cat-sort-order').text(index + 1);
+                });
+
+                $.post(goodsExhibitionAdmin.ajaxUrl, {
+                    action: 'goods_exhibition_save_category_sort',
+                    nonce: goodsExhibitionAdmin.nonce,
+                    order: order
+                }, function(response) {
+                    if (response && response.success) {
+                        var $notice = $('<div class="notice notice-success goods-sort-notice"><p>分类顺序已保存</p></div>');
+                        $tbody.closest('table').before($notice);
+                        setTimeout(function() { $notice.fadeOut(function() { $notice.remove(); }); }, 2000);
+                    } else {
+                        alert('保存失败：' + (response && response.data ? response.data : '未知错误'));
+                    }
+                }).fail(function() {
+                    alert('保存失败：网络错误，请重试');
+                });
             }
         });
     }

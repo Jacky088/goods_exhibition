@@ -3,7 +3,7 @@
  * Plugin Name: 好物页面插件
  * Plugin URI: https://github.com/Jacky088/goods_exhibition
  * Description: 一个展示好物商品的WordPress插件（已通过安全审查和优化）
- * Version: 1.6.1
+ * Version: 1.6.2
  * Author: 木木
  * Author URI: https://github.com/Jacky088/goods_exhibition
  * License: GPL v2 or later
@@ -19,7 +19,7 @@ if (!defined('WPINC')) {
 }
 
 // 定义插件版本
-define('GOODS_EXHIBITION_VERSION', '1.6.1');
+define('GOODS_EXHIBITION_VERSION', '1.6.2');
 // 定义插件路径
 define('GOODS_EXHIBITION_PATH', plugin_dir_path(__FILE__));
 // 定义插件URL
@@ -494,6 +494,68 @@ function goods_exhibition_ajax_save_poster_sort()
     wp_send_json_success('海报顺序已保存');
 }
 add_action('wp_ajax_goods_exhibition_save_poster_sort', 'goods_exhibition_ajax_save_poster_sort');
+
+/**
+ * AJAX: 保存分类排序（拖拽）
+ *
+ * 按拖拽后的顺序批量写入分类表的 sort_order（位置即排序值），
+ * 前端按分类 sort_order 展示分组，因此会同步生效。
+ */
+function goods_exhibition_ajax_save_category_sort()
+{
+    check_ajax_referer('goods_exhibition_sort_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('权限不足');
+    }
+
+    $order = isset($_POST['order']) ? $_POST['order'] : array();
+    if (empty($order) || !is_array($order)) {
+        wp_send_json_error('无效数据');
+    }
+
+    // 前置清洗：去重、去掉无效值，保证为整型 ID 列表
+    $order = array_values(array_unique(array_filter(array_map('intval', (array) $order))));
+    if (empty($order)) {
+        wp_send_json_error('无效数据');
+    }
+
+    global $wpdb;
+    $categories_table = $wpdb->prefix . 'goods_exhibition_categories';
+
+    // 仅保留真实存在的分类 ID，杜绝写入任意值
+    $placeholders = implode(',', array_fill(0, count($order), '%d'));
+    $valid_ids = $wpdb->get_col(
+        $wpdb->prepare(
+            "SELECT id FROM `{$categories_table}` WHERE id IN ({$placeholders})",
+            ...$order
+        )
+    );
+    $valid_ids = array_map('intval', (array) $valid_ids);
+
+    // 单条 CASE WHEN 批量更新，位置即排序值（0 起）
+    $cases = array();
+    $ids = array();
+    foreach ($order as $position => $category_id) {
+        if (!in_array($category_id, $valid_ids, true) || isset($ids[$category_id])) {
+            continue;
+        }
+        $ids[$category_id] = $category_id;
+        $cases[] = $wpdb->prepare('WHEN %d THEN %d', $category_id, intval($position));
+    }
+
+    if (empty($ids)) {
+        wp_send_json_error('无效数据');
+    }
+
+    $ids_sql = implode(',', $ids); // 均已 intval，安全可控
+    $case_sql = implode(' ', $cases);
+    $wpdb->query("UPDATE `{$categories_table}` SET sort_order = CASE id {$case_sql} END WHERE id IN ({$ids_sql})");
+
+    goods_exhibition_flush_cache();
+    wp_send_json_success('分类顺序已保存');
+}
+add_action('wp_ajax_goods_exhibition_save_category_sort', 'goods_exhibition_ajax_save_category_sort');
 
 /*
  * 历史说明：v1.3.x 曾在 wp_body_open 钩子输出"海报展示"幻灯片，

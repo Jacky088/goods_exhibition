@@ -401,8 +401,9 @@ function goods_exhibition_handle_category_actions()
             if ($exists > 0) {
                 goods_exhibition_admin_notice('warning', '分类「' . esc_html($new_name) . '」已存在。');
             } else {
-                $sort = isset($_POST['category_sort']) ? intval($_POST['category_sort']) : 0;
-                $wpdb->insert($categories_table, array('name' => $new_name, 'sort_order' => $sort));
+                // 排序改为拖拽调整，新分类默认追加到末尾（取当前最大排序值 +1）
+                $max_sort = (int) $wpdb->get_var("SELECT MAX(sort_order) FROM `{$categories_table}`");
+                $wpdb->insert($categories_table, array('name' => $new_name, 'sort_order' => $max_sort + 1));
                 goods_exhibition_admin_redirect('cat_added', array('cat_name' => $new_name));
             }
         } else {
@@ -436,7 +437,6 @@ function goods_exhibition_handle_category_actions()
         check_admin_referer('goods_exhibition_category_action');
         $edit_id = isset($_POST['edit_cat_id']) ? intval($_POST['edit_cat_id']) : 0;
         $edit_name = isset($_POST['edit_category_name']) ? sanitize_text_field($_POST['edit_category_name']) : '';
-        $edit_sort = isset($_POST['edit_category_sort']) ? intval($_POST['edit_category_sort']) : 0;
         if (!empty($edit_name) && $edit_id > 0) {
             // 检查名称是否与其他分类冲突
             $conflict = $wpdb->get_var($wpdb->prepare(
@@ -448,7 +448,8 @@ function goods_exhibition_handle_category_actions()
             } else {
                 // 同步更新产品表中的分类名
                 $old_name = $wpdb->get_var($wpdb->prepare("SELECT name FROM `{$categories_table}` WHERE id = %d", $edit_id));
-                $wpdb->update($categories_table, array('name' => $edit_name, 'sort_order' => $edit_sort), array('id' => $edit_id));
+                // 仅更新名称，排序由列表拖拽维护
+                $wpdb->update($categories_table, array('name' => $edit_name), array('id' => $edit_id));
                 if ($old_name !== $edit_name) {
                     $wpdb->update($products_table, array('category' => $edit_name), array('category' => $old_name));
                     goods_exhibition_flush_cache();
@@ -945,10 +946,7 @@ function goods_exhibition_render_categories_tab()
                     <div class="goods-cat-field">
                         <label for="category_name">分类名称 <span class="required">*</span></label>
                         <input type="text" name="category_name" id="category_name" class="regular-text" required placeholder="例如：教育优惠">
-                    </div>
-                    <div class="goods-cat-field">
-                        <label for="category_sort">排序（数字越小越靠前）</label>
-                        <input type="number" name="category_sort" id="category_sort" class="small-text" value="0" min="0">
+                        <p class="description">新分类默认排在末尾，可在右侧列表中拖动调整顺序。</p>
                     </div>
                     <p class="submit">
                         <input type="submit" name="goods_exhibition_add_category" class="button button-primary" value="添加分类">
@@ -962,26 +960,30 @@ function goods_exhibition_render_categories_tab()
                 <?php if (empty($categories)): ?>
                     <p class="description">暂无分类，请在左侧添加。</p>
                 <?php else: ?>
+                    <p class="goods-cat-sort-hint description">&#x2195; 拖动分类左侧手柄可调整顺序，松开后自动保存（同时影响前端分类展示顺序）。</p>
                     <table class="wp-list-table widefat fixed striped">
                         <thead>
                             <tr>
+                                <th style="width: 40px;"></th>
+                                <th style="width: 50px;">序号</th>
                                 <th>分类名称</th>
-                                <th style="width: 80px;">排序</th>
                                 <th style="width: 80px;">产品数</th>
                                 <th style="width: 120px;">操作</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <?php foreach ($categories as $cat): ?>
-                                <tr>
+                        <tbody id="goods-category-sort-body">
+                            <?php foreach ($categories as $index => $cat): ?>
+                                <tr data-id="<?php echo esc_attr($cat['id']); ?>">
+                                    <td class="goods-cat-sort-handle-cell">
+                                        <span class="goods-drag-handle" title="拖动排序" aria-label="拖动排序">&#x2630;</span>
+                                    </td>
+                                    <td class="goods-cat-sort-order"><?php echo $index + 1; ?></td>
                                     <td><strong><?php echo esc_html($cat['name']); ?></strong></td>
-                                    <td><?php echo esc_html($cat['sort_order']); ?></td>
                                     <td><?php echo esc_html($cat['product_count']); ?></td>
                                     <td>
                                         <a href="#" class="goods-action-link goods-cat-edit-link"
                                            data-id="<?php echo esc_attr($cat['id']); ?>"
-                                           data-name="<?php echo esc_attr($cat['name']); ?>"
-                                           data-sort="<?php echo esc_attr($cat['sort_order']); ?>">编辑</a>
+                                           data-name="<?php echo esc_attr($cat['name']); ?>">编辑</a>
                                         <span class="goods-action-sep">|</span>
                                         <?php if ($cat['product_count'] == 0): ?>
                                             <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=goods-exhibition&tab=categories&action=delete_cat&cat_id=' . $cat['id']), 'delete_category_' . $cat['id']); ?>"
@@ -1010,10 +1012,6 @@ function goods_exhibition_render_categories_tab()
                     <div class="goods-cat-field">
                         <label for="edit_category_name">分类名称</label>
                         <input type="text" name="edit_category_name" id="edit_category_name" class="regular-text" required>
-                    </div>
-                    <div class="goods-cat-field">
-                        <label for="edit_category_sort">排序</label>
-                        <input type="number" name="edit_category_sort" id="edit_category_sort" class="small-text" value="0" min="0">
                     </div>
                     <p class="submit">
                         <input type="submit" name="goods_exhibition_edit_category" class="button button-primary" value="保存">
