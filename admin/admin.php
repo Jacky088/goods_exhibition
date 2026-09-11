@@ -479,6 +479,21 @@ function goods_exhibition_render_admin_header($current_tab)
             <a href="<?php echo admin_url('admin.php?page=goods-exhibition&tab=posters'); ?>"
                class="nav-tab <?php echo $current_tab === 'posters' ? 'nav-tab-active' : ''; ?>">海报排序</a>
         </nav>
+
+        <!-- 通用二次确认弹窗（产品删除 / 批量删除 / 分类删除等）
+             统一说明删除带来的影响与生效方式：
+             产品、分类的删除本身没有保存按钮，确认后立即生效。 -->
+        <div id="goods-confirm-modal" style="display:none;">
+            <div class="goods-confirm-overlay"></div>
+            <div class="goods-confirm-content">
+                <h3 id="goods-confirm-title">确认删除</h3>
+                <div id="goods-confirm-body"></div>
+                <p class="submit">
+                    <button type="button" class="button button-primary goods-confirm-ok">确认删除</button>
+                    <button type="button" class="button goods-confirm-cancel">取消</button>
+                </p>
+            </div>
+        </div>
     <?php
 }
 
@@ -601,8 +616,7 @@ function goods_exhibition_render_product_list_tab()
 
                 <div class="tablenav top">
                     <div class="alignleft actions">
-                        <button type="submit" class="button action goods-exhibition-bulk-delete-btn" disabled
-                            onclick="return confirm('确定要删除所选产品吗？此操作不可撤销。');">批量删除</button>
+                        <button type="submit" class="button action goods-exhibition-bulk-delete-btn" disabled>批量删除</button>
 
                         <!-- 批量移动分类 -->
                         <select id="goods-bulk-move-category" class="goods-exhibition-filter-select" disabled>
@@ -694,8 +708,9 @@ function goods_exhibition_render_product_list_tab()
                                     <a href="<?php echo admin_url('admin.php?page=goods-exhibition&tab=add&action=edit&product_id=' . $product['id']); ?>" class="goods-action-link">编辑</a>
                                     <span class="goods-action-sep">|</span>
                                     <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=goods-exhibition&tab=list&action=delete&product_id=' . $product['id']), 'delete_product_' . $product['id']); ?>"
-                                        class="goods-action-link goods-action-delete"
-                                        onclick="return confirm('确定要删除此产品吗？');">删除</a>
+                                        class="goods-action-link goods-action-delete goods-confirm-link"
+                                        data-confirm-type="product"
+                                        data-confirm-name="<?php echo esc_attr($product['name']); ?>">删除</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -889,8 +904,13 @@ function goods_exhibition_render_add_product_tab()
                 <input type="submit" name="goods_exhibition_submit" id="submit" class="button button-primary"
                     value="<?php echo $is_edit ? '更新产品' : '添加产品'; ?>">
                 <?php if ($is_edit): ?>
+                    <button type="button" class="button goods-form-reset">还原修改</button>
                     <a href="<?php echo admin_url('admin.php?page=goods-exhibition&tab=list'); ?>" class="button">取消编辑</a>
                 <?php endif; ?>
+            </p>
+            <p class="description goods-unsaved-hint">
+                当前修改（含图片的新增、更换、移除）需点击「<?php echo $is_edit ? '更新产品' : '添加产品'; ?>」保存后才会生效；
+                未保存即离开页面，将自动恢复为保存前的状态。<?php echo $is_edit ? '如需放弃本次修改，可点击「还原修改」。' : ''; ?>
             </p>
         </form>
 
@@ -987,8 +1007,9 @@ function goods_exhibition_render_categories_tab()
                                         <span class="goods-action-sep">|</span>
                                         <?php if ($cat['product_count'] == 0): ?>
                                             <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=goods-exhibition&tab=categories&action=delete_cat&cat_id=' . $cat['id']), 'delete_category_' . $cat['id']); ?>"
-                                               class="goods-action-link goods-action-delete"
-                                               onclick="return confirm('确定要删除此分类吗？');">删除</a>
+                                               class="goods-action-link goods-action-delete goods-confirm-link"
+                                               data-confirm-type="category"
+                                               data-confirm-name="<?php echo esc_attr($cat['name']); ?>">删除</a>
                                         <?php else: ?>
                                             <span class="description" title="该分类下还有产品，无法删除">删除</span>
                                         <?php endif; ?>

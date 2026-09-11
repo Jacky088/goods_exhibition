@@ -691,3 +691,79 @@ input[type="file"] {
     border-top: 2px dashed #2271b1;
     border-bottom: 2px dashed #2271b1;
 }
+
+/* ========================================
+   通用二次确认弹窗（删除产品 / 批量删除 / 删除分类）
+   ======================================== */
+#goods-confirm-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.goods-confirm-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.goods-confirm-content {
+    position: relative;
+    background: #fff;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    width: 520px;
+    max-width: 90vw;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.goods-confirm-content h3 {
+    margin-top: 0;
+}
+
+.goods-confirm-content p {
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.goods-confirm-impact {
+    list-style: disc;
+    margin: 8px 0 8px 22px;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.goods-confirm-note {
+    background: #fcf9e8;
+    border-left: 4px solid #dba617;
+    padding: 8px 12px;
+    border-radius: 2px;
+}
+
+/* "立即生效"提示：红色高亮，强调无保存按钮、不可撤销 */
+.goods-confirm-note.is-immediate {
+    background: #fef0f0;
+    border-left-color: #d63638;
+}
+
+/* ========================================
+   产品表单：还原修改与未保存提示
+   ======================================== */
+.goods-form-reset {
+    margin-left: 6px;
+}
+
+.goods-unsaved-hint {
+    color: #996800;
+}

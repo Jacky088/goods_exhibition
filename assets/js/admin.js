@@ -7,6 +7,8 @@
     $(document).ready(function() {
         initMediaUploader();
         initImageDelete();
+        initConfirmModal();
+        initFormState();
         initFormValidation();
         initBulkActions();
         initBulkMove();
@@ -198,6 +200,224 @@
             if (e.key === 'Escape' && $modal.is(':visible')) {
                 $modal.hide();
                 $pendingBtn = null;
+            }
+        });
+    }
+
+    /**
+     * 构造各类删除操作的二次确认内容
+     *
+     * 统一说明「删除带来的影响」与「生效方式」：
+     * 产品、分类的删除没有保存按钮，确认后立即生效。
+     *
+     * @param {string} type  操作类型：product | bulk | category
+     * @param {string} name  对象名称（产品名 / 分类名）
+     * @param {number} count 批量操作数量
+     * @returns {{title:string, html:string, okText:string}}
+     */
+    function buildConfirmBody(type, name, count) {
+        function esc(text) {
+            return $('<div>').text(text == null ? '' : text).html();
+        }
+
+        if (type === 'product') {
+            return {
+                title: '删除产品',
+                okText: '确认删除',
+                html: '<p>确定要删除产品「<strong>' + esc(name) + '</strong>」吗？</p>' +
+                    '<p><strong>删除带来的影响：</strong></p>' +
+                    '<ul class="goods-confirm-impact">' +
+                    '<li>该产品将立即从展示页与后台列表中移除。</li>' +
+                    '<li>若其产品图片 / 海报图片未被网站其它内容引用（其它产品、文章、页面、小工具等），将<strong>同时从 WordPress 媒体库中永久删除</strong>（含所有尺寸副本），删除后<strong>不可恢复</strong>。</li>' +
+                    '<li>若图片仍被其它内容引用，则仅删除本产品记录，媒体库中的图片会保留。</li>' +
+                    '</ul>' +
+                    '<p class="goods-confirm-note is-immediate"><strong>立即生效：</strong>产品删除没有保存按钮，点击「确认删除」后将立即执行，且不可撤销。</p>'
+            };
+        }
+
+        if (type === 'bulk') {
+            return {
+                title: '批量删除产品',
+                okText: '确认删除',
+                html: '<p>确定要删除选中的 <strong>' + count + '</strong> 个产品吗？</p>' +
+                    '<p><strong>删除带来的影响：</strong></p>' +
+                    '<ul class="goods-confirm-impact">' +
+                    '<li>这 ' + count + ' 个产品将立即从展示页与后台列表中移除。</li>' +
+                    '<li>若其产品图片 / 海报图片未被网站其它内容引用，将<strong>同时从 WordPress 媒体库中永久删除</strong>（含所有尺寸副本），删除后<strong>不可恢复</strong>。</li>' +
+                    '<li>仍被其它内容引用的图片会保留。</li>' +
+                    '</ul>' +
+                    '<p class="goods-confirm-note is-immediate"><strong>立即生效：</strong>批量删除没有保存按钮，点击「确认删除」后将立即执行，且不可撤销。</p>'
+            };
+        }
+
+        return {
+            title: '删除分类',
+            okText: '确认删除',
+            html: '<p>确定要删除分类「<strong>' + esc(name) + '</strong>」吗？</p>' +
+                '<p><strong>删除带来的影响：</strong></p>' +
+                '<ul class="goods-confirm-impact">' +
+                '<li>该分类将立即从「分类管理」及产品筛选下拉中移除。</li>' +
+                '<li>不会删除任何产品（仅当该分类下没有产品时才可删除）。</li>' +
+                '</ul>' +
+                '<p class="goods-confirm-note is-immediate"><strong>立即生效：</strong>分类删除没有保存按钮，点击「确认删除」后将立即执行。</p>'
+        };
+    }
+
+    /**
+     * 初始化通用二次确认弹窗
+     *
+     * 覆盖单个产品删除、批量删除产品、删除分类等"确认后直接执行"的操作，
+     * 以及产品表单中"保存后才生效"的图片删除。所有操作均先弹出说明影响与生效方式的确认框。
+     */
+    function initConfirmModal() {
+        var $modal = $('#goods-confirm-modal');
+        if (!$modal.length) return;
+
+        var pendingAction = null;
+
+        function closeModal() {
+            $modal.hide();
+            pendingAction = null;
+        }
+
+        function openModal(body, onConfirm) {
+            $('#goods-confirm-title').text(body.title);
+            $('#goods-confirm-body').html(body.html);
+            $modal.find('.goods-confirm-ok').text(body.okText || '确认删除');
+            pendingAction = onConfirm;
+            $modal.show();
+        }
+
+        // 删除链接（单个产品 / 分类）：确认后跳转执行（立即生效，无保存按钮）
+        $(document).on('click', '.goods-confirm-link', function(e) {
+            var $link = $(this);
+            var href = $link.attr('href');
+            if (!href) return;
+
+            e.preventDefault();
+            var body = buildConfirmBody($link.data('confirm-type'), $link.data('confirm-name'), 1);
+            openModal(body, function() {
+                window.location.href = href;
+            });
+        });
+
+        // 批量删除表单：提交前二次确认（确认后直接提交，立即生效）
+        var $bulkForm = $('#goods-exhibition-bulk-form');
+        if ($bulkForm.length) {
+            $bulkForm.on('submit', function(e) {
+                if ($bulkForm.data('goodsConfirmed')) {
+                    return true;
+                }
+
+                e.preventDefault();
+                var count = $('.goods-cb-item:checked').length;
+                if (count === 0) {
+                    return false;
+                }
+
+                openModal(buildConfirmBody('bulk', '', count), function() {
+                    $bulkForm.data('goodsConfirmed', true);
+                    $bulkForm.trigger('submit');
+                });
+                return false;
+            });
+        }
+
+        $modal.find('.goods-confirm-ok').on('click', function() {
+            var action = pendingAction;
+            closeModal();
+            if (typeof action === 'function') {
+                action();
+            }
+        });
+
+        $modal.find('.goods-confirm-cancel, .goods-confirm-overlay').on('click', closeModal);
+
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape' && $modal.is(':visible')) {
+                closeModal();
+            }
+        });
+    }
+
+    /**
+     * 初始化产品表单状态跟踪
+     *
+     * 用户对表单（含图片的新增、更换、移除）的修改只有在点击保存后才真正生效：
+     * - 「还原修改」按钮：一键恢复到进入页面时的状态，不保存即放弃全部改动；
+     * - 未保存离开提醒：有待保存改动时离开页面会给出提示，
+     *   若仍选择离开，则页面重新加载后自动恢复为保存前的状态。
+     */
+    function initFormState() {
+        var $form = $('#goods-exhibition-product-form');
+        if (!$form.length) return;
+
+        // 记录表单初始状态：字段值、图片预览、删除按钮可见性
+        var fieldValues = [];
+        $form.find('input, select, textarea').each(function() {
+            var $el = $(this);
+            if ($el.is(':checkbox') || $el.is(':radio')) {
+                fieldValues.push($el.prop('checked'));
+            } else {
+                fieldValues.push($el.val());
+            }
+        });
+
+        var previewHtml = [];
+        $('.product-image-preview, .poster-image-preview').each(function() {
+            previewHtml.push($(this).html());
+        });
+
+        var deleteBtnDisplay = [];
+        $('.goods-image-delete-btn').each(function() {
+            deleteBtnDisplay.push($(this).css('display'));
+        });
+
+        var initialSerialized = $form.serialize();
+
+        function restoreOriginal() {
+            var index = 0;
+            $form.find('input, select, textarea').each(function() {
+                var $el = $(this);
+                if ($el.is(':checkbox') || $el.is(':radio')) {
+                    $el.prop('checked', fieldValues[index]);
+                } else {
+                    $el.val(fieldValues[index]);
+                }
+                index++;
+            });
+
+            index = 0;
+            $('.product-image-preview, .poster-image-preview').each(function() {
+                $(this).html(previewHtml[index]);
+                index++;
+            });
+
+            index = 0;
+            $('.goods-image-delete-btn').each(function() {
+                $(this).css('display', deleteBtnDisplay[index]);
+                index++;
+            });
+        }
+
+        // 还原修改：放弃当前改动，恢复到保存前的状态
+        $('.goods-form-reset').on('click', function(e) {
+            e.preventDefault();
+            if (!confirm('确定要放弃当前修改，恢复到保存前的状态吗？')) {
+                return;
+            }
+            restoreOriginal();
+        });
+
+        // 未保存离开提醒
+        window.addEventListener('beforeunload', function(e) {
+            if ($form.data('goodsSubmitting')) {
+                return; // 正在保存提交，放行
+            }
+            if ($form.serialize() !== initialSerialized) {
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
             }
         });
     }
@@ -518,7 +738,10 @@
                 alert('以下必填项未填写：\n\n' + errors.join('、') + '\n\n请补充完整后再提交。');
                 return false;
             }
-            
+
+            // 标记为"正在保存"：放行本次提交跳转，避免触发未保存离开提醒
+            $(this).data('goodsSubmitting', true);
+
             return true;
         });
     }
