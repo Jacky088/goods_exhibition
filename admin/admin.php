@@ -166,24 +166,114 @@ function goods_exhibition_admin_notice($type, $text)
 }
 
 /**
- * 动作处理成功后重定向（保留 tab、筛选、分页与编辑态参数）
+ * 动作处理成功后重定向（保留 tab、筛选分类、搜索、分页与编辑态参数，带实时边界校准）
  */
 function goods_exhibition_admin_redirect($msg_code, $extra = array())
 {
+    global $wpdb;
+
     $args = array('page' => 'goods-exhibition');
 
-    foreach (array('tab', 's', 'category', 'paged') as $key) {
-        if (isset($_GET[$key]) && is_scalar($_GET[$key]) && $_GET[$key] !== '') {
-            $args[$key] = (string) $_GET[$key];
+    // 1. 确定 Tab
+    $tab = 'list';
+    if (!empty($extra['tab'])) {
+        $tab = sanitize_key($extra['tab']);
+    } elseif (isset($_POST['_redirect_tab']) && is_scalar($_POST['_redirect_tab']) && $_POST['_redirect_tab'] !== '') {
+        $tab = sanitize_key(wp_unslash($_POST['_redirect_tab']));
+    } elseif (isset($_GET['tab']) && is_scalar($_GET['tab']) && $_GET['tab'] !== '') {
+        $tab = sanitize_key(wp_unslash($_GET['tab']));
+    }
+
+    if ($tab === 'add' || empty($tab)) {
+        $tab = 'list';
+    }
+    $args['tab'] = $tab;
+
+    // 2. 确定搜索关键词 s
+    $search = '';
+    if (isset($extra['s'])) {
+        $search = sanitize_text_field($extra['s']);
+    } elseif (isset($_POST['_redirect_s']) && is_scalar($_POST['_redirect_s']) && trim($_POST['_redirect_s']) !== '') {
+        $search = sanitize_text_field(wp_unslash($_POST['_redirect_s']));
+    } elseif (isset($_GET['s']) && is_scalar($_GET['s']) && trim($_GET['s']) !== '') {
+        $search = sanitize_text_field(wp_unslash($_GET['s']));
+    }
+    if ($search !== '') {
+        $args['s'] = $search;
+    }
+
+    // 3. 确定分类筛选 category（注意：优先从 _redirect_category 或 GET 获取，绝不使用商品本身的 POST category）
+    $category = '';
+    if (isset($extra['category'])) {
+        $category = sanitize_text_field($extra['category']);
+    } elseif (isset($_POST['_redirect_category']) && is_scalar($_POST['_redirect_category']) && trim($_POST['_redirect_category']) !== '') {
+        $category = sanitize_text_field(wp_unslash($_POST['_redirect_category']));
+    } elseif (isset($_GET['category']) && is_scalar($_GET['category']) && trim($_GET['category']) !== '') {
+        $category = sanitize_text_field(wp_unslash($_GET['category']));
+    }
+    if ($category !== '') {
+        $args['category'] = $category;
+    }
+
+    // 4. 确定请求的分页 paged
+    $requested_paged = 1;
+    if (isset($extra['paged']) && intval($extra['paged']) > 0) {
+        $requested_paged = intval($extra['paged']);
+    } elseif (isset($_POST['_redirect_paged']) && intval($_POST['_redirect_paged']) > 0) {
+        $requested_paged = intval($_POST['_redirect_paged']);
+    } elseif (isset($_GET['paged']) && intval($_GET['paged']) > 0) {
+        $requested_paged = intval($_GET['paged']);
+    }
+
+    // 5. 漏洞防范与智能校准（Page Clamping）：针对产品列表查询实时数据库，防止越界或删空当前页导致空白
+    if ($tab === 'list') {
+        $table_name = $wpdb->prefix . 'goods_exhibition';
+        $where = array();
+        $where_args = array();
+
+        if ($category !== '') {
+            $where[] = 'category = %s';
+            $where_args[] = $category;
         }
+
+        if ($search !== '') {
+            $search_like = '%' . $wpdb->esc_like($search) . '%';
+            $where[] = '(name LIKE %s OR description LIKE %s)';
+            $where_args[] = $search_like;
+            $where_args[] = $search_like;
+        }
+
+        $where_sql = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+        if (!empty($where_args)) {
+            $total_items = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table_name}` {$where_sql}", ...$where_args));
+        } else {
+            $total_items = (int) $wpdb->get_var("SELECT COUNT(*) FROM `{$table_name}`");
+        }
+
+        $per_page = defined('GOODS_EXHIBITION_PER_PAGE') ? GOODS_EXHIBITION_PER_PAGE : 10;
+        $max_page = max(1, (int) ceil($total_items / $per_page));
+
+        if ($requested_paged > $max_page) {
+            $requested_paged = $max_page;
+        }
+
+        if ($requested_paged > 1) {
+            $args['paged'] = $requested_paged;
+        } else {
+            unset($args['paged']);
+        }
+    } elseif ($requested_paged > 1) {
+        $args['paged'] = $requested_paged;
     }
 
-    if (isset($args['tab']) && $args['tab'] === 'add') {
-        $args['tab'] = 'list';
-    }
-
+    // 合并其余参数
     $args = array_merge($args, $extra);
     $args['goods_msg'] = $msg_code;
+
+    // 清理第一页多余的 paged=1 参数
+    if (isset($args['paged']) && intval($args['paged']) <= 1) {
+        unset($args['paged']);
+    }
 
     wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
     exit;
@@ -494,12 +584,8 @@ function goods_exhibition_handle_product_form_action()
             if ($result) {
                 $new_id = (int) $wpdb->insert_id;
                 goods_exhibition_flush_cache();
-                // 成功后跳转到产品列表页
-                wp_safe_redirect(add_query_arg(
-                    array('page' => 'goods-exhibition', 'tab' => 'list', 'goods_msg' => 'added', 'new_id' => $new_id),
-                    admin_url('admin.php')
-                ));
-                exit;
+                // 成功后跳转到产品列表页（保留当前分类筛选与上下文）
+                goods_exhibition_admin_redirect('added', array('new_id' => $new_id));
             } else {
                 goods_exhibition_admin_notice('error', '添加产品失败，请重试。');
             }
@@ -721,41 +807,54 @@ function goods_exhibition_render_product_list_tab()
         $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
     }
 
-    $current_page = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
+    // 先获取总记录数与计算总页数
+    if (!empty($where_values)) {
+        $count_query = $wpdb->prepare("SELECT COUNT(*) FROM `{$table_name}` {$where_sql}", ...$where_values);
+        $total_items = (int) $wpdb->get_var($count_query);
+    } else {
+        $total_items = (int) $wpdb->get_var("SELECT COUNT(*) FROM `{$table_name}`");
+    }
+
     $per_page = GOODS_EXHIBITION_PER_PAGE;
+    $total_pages = max(1, (int) ceil($total_items / $per_page));
+
+    // 智能校准当前请求页码：防止超出总页数导致表格空白
+    $requested_page = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
+    $current_page = min($requested_page, $total_pages);
     $offset = ($current_page - 1) * $per_page;
 
     $is_category_filtered = !empty($filter_category);
     $order_by = $is_category_filtered ? "ORDER BY sort_order ASC, id DESC" : "ORDER BY id DESC";
 
     if (!empty($where_values)) {
-        $count_query = $wpdb->prepare("SELECT COUNT(*) FROM `{$table_name}` {$where_sql}", ...$where_values);
-        $total_items = (int) $wpdb->get_var($count_query);
-
         $query_values = array_merge($where_values, array($per_page, $offset));
         $products = $wpdb->get_results(
             $wpdb->prepare("SELECT * FROM `{$table_name}` {$where_sql} {$order_by} LIMIT %d OFFSET %d", ...$query_values),
             ARRAY_A
         );
     } else {
-        $total_items = (int) $wpdb->get_var("SELECT COUNT(*) FROM `{$table_name}`");
         $products = $wpdb->get_results(
             $wpdb->prepare("SELECT * FROM `{$table_name}` {$order_by} LIMIT %d OFFSET %d", $per_page, $offset),
             ARRAY_A
         );
     }
 
-    $total_pages = max(1, ceil($total_items / $per_page));
-
     // 获取所有类别
     $categories_table = $wpdb->prefix . 'goods_exhibition_categories';
     $all_categories = $wpdb->get_col("SELECT name FROM `{$categories_table}` ORDER BY sort_order ASC, name ASC");
 
-    // 分页参数
+    // 分页基准参数
     $base_url_params = array('page' => 'goods-exhibition', 'tab' => 'list');
     if (!empty($search)) $base_url_params['s'] = $search;
     if (!empty($filter_category)) $base_url_params['category'] = $filter_category;
     $page_base_url = admin_url('admin.php?' . http_build_query($base_url_params));
+
+    // 当前列表完整上下文参数与 action URL（携带当前分类与合法页码）
+    $current_list_url_params = $base_url_params;
+    if ($current_page > 1) {
+        $current_list_url_params['paged'] = $current_page;
+    }
+    $current_list_action_url = admin_url('admin.php?' . http_build_query($current_list_url_params));
 
     // 检测是否需要自动弹出产品编辑/添加弹窗
     $auto_open_product = null;
@@ -826,7 +925,7 @@ function goods_exhibition_render_product_list_tab()
                     <?php if ($total_pages > 1): ?>
                         <div class="ge-mini-pagination">
                             <?php
-                            $prev_url = $current_page > 1 ? $page_base_url . '&paged=' . ($current_page - 1) : '';
+                            $prev_url = $current_page > 1 ? ($current_page - 1 === 1 ? $page_base_url : $page_base_url . '&paged=' . ($current_page - 1)) : '';
                             $next_url = $current_page < $total_pages ? $page_base_url . '&paged=' . ($current_page + 1) : '';
                             ?>
                             <?php if ($prev_url): ?>
@@ -878,10 +977,13 @@ function goods_exhibition_render_product_list_tab()
                     <p>还没有添加任何产品。<button type="button" class="ge-btn ge-btn-primary ge-btn-sm" id="ge-empty-add-btn" style="margin-left: 8px;">添加一个新产品</button></p>
                 <?php endif; ?>
             </div>
-        <?php else: ?>
-            <form method="post" id="goods-exhibition-bulk-form">
+            <form method="post" id="goods-exhibition-bulk-form" action="<?php echo esc_url($current_list_action_url); ?>">
                 <?php wp_nonce_field('goods_exhibition_bulk_delete', '_wpnonce_bulk'); ?>
                 <input type="hidden" name="goods_exhibition_bulk_action" value="delete">
+                <input type="hidden" name="_redirect_tab" value="list">
+                <input type="hidden" name="_redirect_category" value="<?php echo esc_attr($filter_category); ?>">
+                <input type="hidden" name="_redirect_paged" value="<?php echo esc_attr($current_page); ?>">
+                <input type="hidden" name="_redirect_s" value="<?php echo esc_attr($search); ?>">
 
                 <div class="ge-table-card">
                     <table class="ge-table goods-exhibition-table" <?php echo $is_category_filtered ? 'data-sortable="1"' : ''; ?>>
@@ -975,7 +1077,14 @@ function goods_exhibition_render_product_list_tab()
                                                     title="编辑产品" aria-label="编辑产品">
                                                 <?php echo goods_exhibition_get_icon('edit'); ?>
                                             </button>
-                                            <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=goods-exhibition&tab=list&action=delete&product_id=' . $product['id']), 'delete_product_' . $product['id']); ?>"
+                                            <?php
+                                            $row_delete_args = array_merge($current_list_url_params, array(
+                                                'action' => 'delete',
+                                                'product_id' => $product['id'],
+                                            ));
+                                            $row_delete_url = wp_nonce_url(admin_url('admin.php?' . http_build_query($row_delete_args)), 'delete_product_' . $product['id']);
+                                            ?>
+                                            <a href="<?php echo esc_url($row_delete_url); ?>"
                                                class="ge-btn-icon ge-btn-delete goods-confirm-link"
                                                data-confirm-type="product"
                                                data-confirm-name="<?php echo esc_attr($product['name']); ?>"
@@ -988,6 +1097,27 @@ function goods_exhibition_render_product_list_tab()
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+
+                    <?php if ($total_pages > 1): ?>
+                        <div class="ge-table-footer">
+                            <span class="ge-total-count">共 <strong><?php echo $total_items; ?></strong> 个产品，当前第 <?php echo $current_page; ?> / <?php echo $total_pages; ?> 页</span>
+                            <div class="ge-mini-pagination">
+                                <?php if ($prev_url): ?>
+                                    <a href="<?php echo esc_url($prev_url); ?>" class="ge-page-btn" title="上一页">‹</a>
+                                <?php else: ?>
+                                    <span class="ge-page-btn is-disabled">‹</span>
+                                <?php endif; ?>
+
+                                <span class="ge-page-indicator"><?php echo $current_page; ?> / <?php echo $total_pages; ?></span>
+
+                                <?php if ($next_url): ?>
+                                    <a href="<?php echo esc_url($next_url); ?>" class="ge-page-btn" title="下一页">›</a>
+                                <?php else: ?>
+                                    <span class="ge-page-btn is-disabled">›</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </form>
         <?php endif; ?>
@@ -1002,10 +1132,14 @@ function goods_exhibition_render_product_list_tab()
                 </div>
 
                 <form method="post" enctype="multipart/form-data" id="goods-exhibition-product-form" class="ge-modal-form"
-                      action="<?php echo admin_url('admin.php?page=goods-exhibition&tab=list'); ?>">
+                      action="<?php echo esc_url($current_list_action_url); ?>">
                     <?php wp_nonce_field('goods_exhibition_add_product'); ?>
                     <input type="hidden" name="goods_exhibition_submit" value="1">
                     <input type="hidden" name="product_id" id="product_id" value="0">
+                    <input type="hidden" name="_redirect_tab" id="ge_redirect_tab" value="list">
+                    <input type="hidden" name="_redirect_category" id="ge_redirect_category" value="<?php echo esc_attr($filter_category); ?>">
+                    <input type="hidden" name="_redirect_paged" id="ge_redirect_paged" value="<?php echo esc_attr($current_page); ?>">
+                    <input type="hidden" name="_redirect_s" id="ge_redirect_s" value="<?php echo esc_attr($search); ?>">
 
                     <div class="ge-modal-body ge-modal-scrollable">
                         <!-- 产品名称 (0/50 计数) -->

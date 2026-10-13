@@ -1357,6 +1357,17 @@
     color: var(--ge-text-light);
 }
 
+.ge-table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: #f8fafc;
+    border-top: 1px solid var(--ge-border);
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 /* 胶囊徽章 (Badges & Pills) */
 .ge-badge-pill {
     display: inline-flex;

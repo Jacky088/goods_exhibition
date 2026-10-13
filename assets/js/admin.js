@@ -964,7 +964,25 @@
 
         var $form = $('#goods-exhibition-product-form');
 
+        function syncRedirectContext() {
+            var searchParams = new URLSearchParams(window.location.search);
+            var paged = searchParams.get('paged') || '';
+            var category = searchParams.get('category') || '';
+            var s = searchParams.get('s') || '';
+
+            if (paged) {
+                $('#ge_redirect_paged').val(paged);
+            }
+            if (category) {
+                $('#ge_redirect_category').val(category);
+            }
+            if (s) {
+                $('#ge_redirect_s').val(s);
+            }
+        }
+
         function openModal() {
+            syncRedirectContext();
             $modal.show();
             $('body').addClass('ge-modal-open');
             if (typeof window.geSyncFormBaseline === 'function') {
@@ -1103,6 +1121,17 @@
             $('#product_description').trigger('input');
             $('.ge-quick-tag-btn').removeClass('is-active ge-btn-primary').addClass('ge-btn-secondary');
             $('.ge-field-clear-btn').hide();
+
+            // 预选当前正在筛选的分类（若有）
+            var searchParams = new URLSearchParams(window.location.search);
+            var currentCat = searchParams.get('category') || $('#ge_redirect_category').val() || '';
+            if (currentCat) {
+                $('#product_category').val(currentCat);
+            } else {
+                $('#product_category').val('');
+            }
+
+            syncRedirectContext();
         }
 
         function escapeTagHtml(text) {
