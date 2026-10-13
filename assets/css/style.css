@@ -83,9 +83,13 @@
 .goods-exhibition-slider {
     display: flex;
     overflow-x: auto;
+    overflow-y: hidden;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    touch-action: pan-x;
+    touch-action: auto;
+    touch-action: pan-y pan-x;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
     scroll-snap-type: x proximity;
     /* 注意：overflow-x 非 visible 时，overflow-y 会被计算为 auto，即垂直方向也裁切。
        卡片阴影向下扩散约 22px（hover 时约 34px），底部内边距必须大于扩散距离，
@@ -529,7 +533,10 @@
        该负边距会把poster-inner（overflow:hidden BFC）的自动高度缩减34px，
        导致海报底部被固定裁掉34px，可视高宽比随窗口宽度漂移（越窄越扁） */
     margin-bottom: 0;
-    touch-action: pan-x;
+    touch-action: auto;
+    touch-action: pan-y pan-x;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
 }
 
 .goods-exhibition-wrapper.poster-slider .goods-exhibition-item.poster-item {
@@ -942,11 +949,18 @@ body[data-theme="dark"] .goods-exhibition-empty,
     right: 0;
     bottom: 0;
     z-index: 999999;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     padding: 20px;
     box-sizing: border-box;
+    pointer-events: none;
+}
+
+.goods-quickview-modal.is-active,
+.goods-quickview-modal[style*="display: flex"] {
+    display: flex !important;
+    pointer-events: auto !important;
 }
 
 .goods-quickview-overlay {
@@ -1165,10 +1179,6 @@ body[data-theme="dark"] .goods-exhibition-empty,
 
 body.goods-modal-open {
     overflow: hidden;
-    touch-action: none;
-}
-body.goods-modal-open .goods-quickview-dialog {
-    touch-action: pan-y;
 }
 
 /* ========================================

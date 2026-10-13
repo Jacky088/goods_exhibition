@@ -233,7 +233,7 @@ function goods_exhibition_shortcode_callback($atts)
         $modal_rendered = true;
         ob_start();
         ?>
-        <div id="goods-exhibition-quickview-modal" class="goods-quickview-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
+        <div id="goods-exhibition-quickview-modal" class="goods-quickview-modal no-toc notoc lwptoc-ignore ez-toc-exclude ez-toc-ignore toc-ignore" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true" data-toc-exclude="true" data-lwptoc-ignore="true">
             <div class="goods-quickview-overlay"></div>
             <div class="goods-quickview-dialog">
                 <button type="button" class="goods-quickview-close" aria-label="关闭窗口">&times;</button>
@@ -246,12 +246,12 @@ function goods_exhibition_shortcode_callback($atts)
                             <span id="goods-quickview-category" class="goods-quickview-badge-cat" style="display:none;"></span>
                         </div>
                         <div class="goods-quickview-title-wrap">
-                            <h3 id="goods-quickview-title" class="goods-quickview-title"></h3>
+                            <div id="goods-quickview-title" class="goods-quickview-title no-toc ez-toc-exclude lwptoc-ignore" role="heading" aria-level="3"></div>
                             <span id="goods-quickview-new" class="goods-quickview-badge-new" style="display:none;">NEW</span>
                         </div>
                         <div id="goods-quickview-price" class="goods-quickview-price"></div>
                         <div class="goods-quickview-desc-wrapper">
-                            <h4 class="goods-quickview-desc-heading">商品详情与卖点</h4>
+                            <div class="goods-quickview-desc-heading no-toc ez-toc-exclude lwptoc-ignore" role="heading" aria-level="4">商品详情与卖点</div>
                             <div id="goods-quickview-desc" class="goods-quickview-desc"></div>
                         </div>
                         <div id="goods-quickview-actions" class="goods-quickview-actions" style="display:none;">

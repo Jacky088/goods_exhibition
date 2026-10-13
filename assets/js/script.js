@@ -43,10 +43,12 @@
             // 延迟 500ms 后播放 peek 动画
             setTimeout(function () {
                 slider.classList.add('peek-hint');
-                // 动画结束后移除 class
-                slider.addEventListener('animationend', function () {
+                var cleanup = function () {
                     slider.classList.remove('peek-hint');
-                }, { once: true });
+                };
+                slider.addEventListener('animationend', cleanup, { once: true });
+                // 增加安全兜底定时器，防止移动端特殊情况下未派发 animationend 导致样式残留
+                setTimeout(cleanup, 1200);
             }, 500);
         });
     }
@@ -290,6 +292,7 @@
 
             // 先将弹窗设为可见，保证容器在视口中完成真实尺寸与布局计算
             modal.style.display = 'flex';
+            modal.classList.add('is-active');
             modal.setAttribute('aria-hidden', 'false');
             document.body.classList.add('goods-modal-open');
 
@@ -411,17 +414,10 @@
             var modal = getModal();
             if (!modal) return;
             modal.style.display = 'none';
+            modal.classList.remove('is-active');
             modal.setAttribute('aria-hidden', 'true');
             document.body.classList.remove('goods-modal-open');
         }
-
-        // 清除残留焦点以防黑框：使用 passive 监听，绝不中断原生指针/鼠标管道
-        document.addEventListener('pointerdown', function (e) {
-            var trigger = e.target.closest('.goods-exhibition-item, .goods-exhibition-quickview-btn, .goods-exhibition-image-container');
-            if (trigger && trigger.blur) {
-                trigger.blur();
-            }
-        }, { passive: true });
 
         // 核心：使用事件捕获阶段 (Capture Phase: true) 优先拦截所有商品卡片点击！
         // 彻底阻断原生/主题的链接跳转或大图画廊行为，确保点击图片、详情按钮或卡片任何位置，均唯一唤起详情弹窗。
@@ -503,5 +499,9 @@
                 }
             }
         });
+
+        // 移动端前进后退或切换页面时保证重置弹窗及页面滚动锁
+        window.addEventListener('popstate', closeModal);
+        window.addEventListener('pagehide', closeModal);
     }
 })();
