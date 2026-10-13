@@ -11,6 +11,7 @@
         initNoLightbox();
         initMobilePeekHint();
         initQuickViewModal();
+        initCategoryDetailView();
     }
 
     if (document.readyState === 'loading') {
@@ -527,5 +528,159 @@
         // 移动端前进后退或切换页面时保证重置弹窗及页面滚动锁
         window.addEventListener('popstate', closeModal);
         window.addEventListener('pagehide', closeModal);
+    }
+
+    /**
+     * 分类全量商品网格视图与首页视图无感瞬切 (SPA 交互)
+     */
+    function initCategoryDetailView() {
+        var homeView = document.getElementById('goods-exhibition-home-view');
+        var detailView = document.getElementById('goods-category-detail-view');
+        if (!homeView || !detailView) return;
+
+        var detailTitle = document.getElementById('goods-detail-title');
+        var detailCount = document.getElementById('goods-detail-count');
+        var detailGrid = document.getElementById('goods-detail-grid');
+        var backBtn = document.getElementById('goods-detail-back-btn');
+
+        var lastScrollY = 0;
+        var lastActiveCategory = '';
+
+        function escapeAttr(str) {
+            if (window.CSS && window.CSS.escape) {
+                return window.CSS.escape(str);
+            }
+            return String(str).replace(/["\\]/g, '\\$&');
+        }
+
+        function openCategory(categoryName, updateHistory) {
+            if (!categoryName) return;
+            var section = document.querySelector('.goods-category-section[data-category="' + escapeAttr(categoryName) + '"]');
+            if (!section) return;
+
+            var fullCardsContainer = section.querySelector('.goods-category-full-cards');
+            if (!fullCardsContainer) return;
+
+            // 1. 记录当前首页滚动高度与当前分类，方便返回时精准恢复
+            lastScrollY = window.pageYOffset || document.documentElement.scrollTop;
+            lastActiveCategory = categoryName;
+
+            // 2. 注入标题与商品总数
+            var count = fullCardsContainer.getAttribute('data-count') || fullCardsContainer.children.length;
+            if (detailTitle) {
+                detailTitle.textContent = categoryName;
+            }
+            if (detailCount) {
+                detailCount.textContent = '共 ' + count + ' 件商品';
+            }
+
+            // 3. 克隆全量卡片并注入网格流
+            if (detailGrid) {
+                detailGrid.innerHTML = '';
+                var clonedNodes = fullCardsContainer.cloneNode(true);
+                while (clonedNodes.firstChild) {
+                    detailGrid.appendChild(clonedNodes.firstChild);
+                }
+            }
+
+            // 4. 隐藏首页主视图与海报 Banner，展示全量视图
+            homeView.style.display = 'none';
+            detailView.style.display = 'block';
+            detailView.setAttribute('aria-hidden', 'false');
+
+            // 5. 视图平滑滚动至全量页顶部
+            var rect = detailView.getBoundingClientRect();
+            var targetTop = window.pageYOffset + rect.top - 20;
+            window.scrollTo({
+                top: Math.max(0, targetTop),
+                behavior: 'smooth'
+            });
+
+            // 6. 更新 URL Hash 支持浏览器后退与手机侧滑
+            if (updateHistory) {
+                history.pushState({ geView: 'category', geCat: categoryName }, '', '#cat=' + encodeURIComponent(categoryName));
+            }
+        }
+
+        function closeCategory(popstateTriggered) {
+            if (detailView.style.display === 'none') return;
+
+            // 1. 隐藏全量视图，清空网格，恢复首页视图
+            detailView.style.display = 'none';
+            detailView.setAttribute('aria-hidden', 'true');
+            if (detailGrid) {
+                detailGrid.innerHTML = '';
+            }
+            homeView.style.display = '';
+
+            // 2. 如果不是由 popstate 触发的，且当前 url 仍有该 hash，则安全回退历史记录
+            if (!popstateTriggered) {
+                if (window.location.hash && window.location.hash.indexOf('#cat=') === 0) {
+                    history.back();
+                } else {
+                    history.replaceState(null, '', window.location.pathname + window.location.search);
+                }
+            }
+
+            // 3. 恢复滚动位置到之前所在的分类位置
+            var targetSection = lastActiveCategory ? document.querySelector('.goods-category-section[data-category="' + escapeAttr(lastActiveCategory) + '"]') : null;
+            if (targetSection) {
+                setTimeout(function () {
+                    targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 40);
+            } else if (typeof lastScrollY === 'number') {
+                setTimeout(function () {
+                    window.scrollTo({ top: lastScrollY, behavior: 'smooth' });
+                }, 40);
+            }
+        }
+
+        // 点击「查看更多 >」按钮
+        document.addEventListener('click', function (e) {
+            var moreBtn = e.target.closest('.goods-exhibition-more-link');
+            if (moreBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                var cat = moreBtn.getAttribute('data-category');
+                openCategory(cat, true);
+            }
+        });
+
+        // 点击「← 返回」按钮
+        if (backBtn) {
+            backBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                closeCategory(false);
+            });
+        }
+
+        // 监听浏览器后退与手机侧滑手势 (popstate)
+        window.addEventListener('popstate', function (e) {
+            // 若此时商品详情弹窗正开着，优先由详情弹窗逻辑处理，不关闭分类全量页
+            var qvModal = document.getElementById('goods-exhibition-quickview-modal');
+            if (qvModal && qvModal.style.display !== 'none') {
+                return;
+            }
+
+            if (e.state && e.state.geView === 'category' && e.state.geCat) {
+                openCategory(e.state.geCat, false);
+            } else {
+                if (detailView.style.display !== 'none') {
+                    closeCategory(true);
+                }
+            }
+        });
+
+        // 页面初次加载时若带 #cat=xxx，自动唤起该分类全量页
+        if (window.location.hash && window.location.hash.indexOf('#cat=') === 0) {
+            try {
+                var hashCat = decodeURIComponent(window.location.hash.substring(5));
+                if (hashCat) {
+                    setTimeout(function () {
+                        openCategory(hashCat, false);
+                    }, 120);
+                }
+            } catch (err) {}
+        }
     }
 })();

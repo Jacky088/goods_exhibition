@@ -58,33 +58,13 @@ function goods_exhibition_render_product_card($product, $is_new = false)
 
     // 标题行：左侧品名，右侧 NEW 标签
     $inner .= '<div class="goods-card-header-row">';
-    $inner .= '<h3 class="goods-exhibition-title" title="' . esc_attr($product['name']) . '">' . $name . '</h3>';
+    $inner .= '<div class="goods-exhibition-title no-toc notoc lwptoc-ignore ez-toc-exclude ez-toc-ignore toc-ignore" title="' . esc_attr($product['name']) . '" data-toc-exclude="true" data-lwptoc-ignore="true">' . $name . '</div>';
     if ($is_new) {
         $inner .= '<span class="goods-exhibition-new-badge">NEW</span>';
     }
     $inner .= '</div>';
 
-    // 核心卖点与规格副标
-    $inner .= '<div class="goods-exhibition-description" title="' . $desc_plain . '">' . $desc . '</div>';
-
-    // 价格与操作按钮同行显示（如 ¥9499起 与 详情）
-    $inner .= '<div class="goods-exhibition-price-row">';
-    if (!empty($price)) {
-        $inner .= '<div class="goods-exhibition-price">' . $price . '</div>';
-    } else {
-        $inner .= '<div class="goods-exhibition-price-placeholder"></div>';
-    }
-    $inner .= '<button type="button" class="goods-exhibition-quickview-btn" aria-label="查看商品详情" title="查看完整详情" data-img="' . $image_url . '" data-product="' . $product_json . '">详情</button>';
-    $inner .= '</div>';
-    $inner .= '</div>';
-
-    // 图片容器：正方形等比，底角浮动特色胶囊（支持最多2个同时显示）
-    $inner .= '<div class="goods-exhibition-image-container goods-exhibition-image-trigger no-lightbox no-zoom viewer-ignore ignore-lightbox" role="button" tabindex="0" aria-label="' . esc_attr($product['name']) . ' 详情" data-no-viewer="true" data-no-lightbox="true" data-lightbox="false" data-fancybox="none" data-no-zoom="true">';
-    $inner .= '<img src="' . $image_url . '" alt="' . esc_attr($product['name']) . '"'
-        . ' width="500" height="500" loading="lazy" class="goods-exhibition-image no-lightbox no-zoom viewer-ignore ignore-lightbox"'
-        . ' data-no-viewer="true" data-no-lightbox="true" data-lightbox="false" data-fancybox="none" data-no-zoom="true" draggable="false">';
-
-    // 卖点胶囊标签（解析逗号/分号/竖线分隔，最多展示前2个；严格不能按空格切分，确保完整保留「新品首发 🚀」等图文标签为单个整体）
+    // 卖点胶囊标签（方案A：位于标题下方、描述上方；最多展示前2个；严格不能按空格切分）
     $badge_tags = array();
     if (!empty($badge_tag)) {
         $raw_tags = preg_split('/[,，、;；|]+/u', $badge_tag);
@@ -106,6 +86,26 @@ function goods_exhibition_render_product_card($product, $is_new = false)
         }
         $inner .= '</div>';
     }
+
+    // 核心卖点与规格副标
+    $inner .= '<div class="goods-exhibition-description" title="' . $desc_plain . '">' . $desc . '</div>';
+
+    // 价格与操作按钮同行显示（如 ¥9499起 与 详情）
+    $inner .= '<div class="goods-exhibition-price-row">';
+    if (!empty($price)) {
+        $inner .= '<div class="goods-exhibition-price">' . $price . '</div>';
+    } else {
+        $inner .= '<div class="goods-exhibition-price-placeholder"></div>';
+    }
+    $inner .= '<button type="button" class="goods-exhibition-quickview-btn" aria-label="查看商品详情" title="查看完整详情" data-img="' . $image_url . '" data-product="' . $product_json . '">详情</button>';
+    $inner .= '</div>';
+    $inner .= '</div>';
+
+    // 图片容器：纯净呈现，无任何遮挡
+    $inner .= '<div class="goods-exhibition-image-container goods-exhibition-image-trigger no-lightbox no-zoom viewer-ignore ignore-lightbox" role="button" tabindex="0" aria-label="' . esc_attr($product['name']) . ' 详情" data-no-viewer="true" data-no-lightbox="true" data-lightbox="false" data-fancybox="none" data-no-zoom="true">';
+    $inner .= '<img src="' . $image_url . '" alt="' . esc_attr($product['name']) . '"'
+        . ' width="500" height="500" loading="lazy" class="goods-exhibition-image no-lightbox no-zoom viewer-ignore ignore-lightbox"'
+        . ' data-no-viewer="true" data-no-lightbox="true" data-lightbox="false" data-fancybox="none" data-no-zoom="true" draggable="false">';
     $inner .= '</div>';
 
     // 卡片外层容器
@@ -411,8 +411,8 @@ function goods_exhibition_render_poster_card($poster, $is_first = false)
         $inner .= '<div class="goods-poster-brand-logo-container">' . $logo_html . '</div>';
     }
 
-    // 2. 加粗醒目大标题
-    $inner .= '<h3 class="goods-exhibition-title poster-title">' . $name . '</h3>';
+    // 2. 加粗醒目大标题（排除目录插件收录）
+    $inner .= '<div class="goods-exhibition-title poster-title no-toc notoc lwptoc-ignore ez-toc-exclude ez-toc-ignore toc-ignore" title="' . esc_attr($poster['name']) . '" data-toc-exclude="true" data-lwptoc-ignore="true">' . $name . '</div>';
 
     // 3. 核心卖点副标
     $inner .= '<div class="goods-exhibition-description poster-desc">' . $desc . '</div>';
@@ -507,11 +507,12 @@ function goods_exhibition_shortcode_callback($atts)
 
     $output = '';
 
-    // 1. 首屏海报轮播 (Banner)
+    // 1. 首屏海报轮播 (Banner) 与首页主视图
+    $output .= '<div class="goods-exhibition-home-view" id="goods-exhibition-home-view">';
     $output .= goods_exhibition_render_poster_slider();
 
     if (empty($products)) {
-        return $output . '<div class="goods-exhibition-empty">暂无产品</div>';
+        return $output . '<div class="goods-exhibition-empty">暂无产品</div></div>';
     }
 
     $grouped_products = [];
@@ -530,21 +531,70 @@ function goods_exhibition_shortcode_callback($atts)
     ob_start();
     ?>
     <div class="goods-exhibition-main-container">
-        <?php foreach ($grouped_products as $category_name => $items): ?>
-        <div class="goods-category-section">
-            <h2 class="goods-exhibition-category-title"><?php echo esc_html($category_name); ?></h2>
+        <?php foreach ($grouped_products as $category_name => $items):
+            $total_cat_items = count($items);
+            $has_more = $total_cat_items > 7;
+            $home_items = array_slice($items, 0, 7);
+            $cat_slug = sanitize_title($category_name);
+        ?>
+        <div class="goods-category-section" id="cat-section-<?php echo esc_attr($cat_slug); ?>" data-category="<?php echo esc_attr($category_name); ?>">
+            <!-- 分类标题行：优雅居中标题，右侧悬浮「查看更多 >」按钮 -->
+            <div class="goods-exhibition-category-header">
+                <h2 class="goods-exhibition-category-title"><?php echo esc_html($category_name); ?></h2>
+                <?php if ($has_more): ?>
+                    <div class="goods-category-header-action">
+                        <button type="button" class="goods-exhibition-more-link" data-category="<?php echo esc_attr($category_name); ?>" aria-label="查看更多 <?php echo esc_attr($category_name); ?>">
+                            <span>查看更多</span>
+                            <span class="goods-more-arrow">&rsaquo;</span>
+                        </button>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- 首页横向滑动轮播（最多取前 7 个商品） -->
             <div class="goods-exhibition-wrapper">
                 <button class="goods-exhibition-arrow goods-exhibition-arrow-left" aria-label="上一个"><span aria-hidden="true">&#10094;</span></button>
                 <div class="goods-exhibition-slider">
-                    <?php foreach ($items as $product):
+                    <?php foreach ($home_items as $product):
                         $is_new = isset($product['is_new']) && intval($product['is_new']) === 1;
                         echo goods_exhibition_render_product_card($product, $is_new);
                     endforeach; ?>
                 </div>
                 <button class="goods-exhibition-arrow goods-exhibition-arrow-right" aria-label="下一个"><span aria-hidden="true">&#10095;</span></button>
             </div>
+
+            <?php if ($has_more): ?>
+                <!-- 该分类全量商品卡片容器（隐藏备份，点击「查看更多」时瞬时展开，排除目录收录） -->
+                <div class="goods-category-full-cards no-toc notoc lwptoc-ignore ez-toc-exclude ez-toc-ignore toc-ignore" style="display:none;" data-category="<?php echo esc_attr($category_name); ?>" data-count="<?php echo esc_attr($total_cat_items); ?>" data-toc-exclude="true" data-lwptoc-ignore="true">
+                    <?php foreach ($items as $product):
+                        $is_new = isset($product['is_new']) && intval($product['is_new']) === 1;
+                        echo goods_exhibition_render_product_card($product, $is_new);
+                    endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
         <?php endforeach; ?>
+    </div>
+    </div><!-- end .goods-exhibition-home-view -->
+
+    <!-- 分类全量商品网格视图 (SPA 无感瞬切，默认隐藏，完全排除目录插件收录) -->
+    <div id="goods-category-detail-view" class="goods-category-detail-view no-toc notoc lwptoc-ignore ez-toc-exclude ez-toc-ignore toc-ignore" style="display:none;" aria-hidden="true" data-toc-exclude="true" data-lwptoc-ignore="true">
+        <div class="goods-detail-view-header">
+            <div class="goods-detail-header-left">
+                <button type="button" class="goods-detail-back-btn" id="goods-detail-back-btn" aria-label="返回首页">
+                    <span class="goods-back-arrow">&larr;</span>
+                    <span>返回</span>
+                </button>
+            </div>
+            <div class="goods-detail-title-wrap">
+                <div class="goods-detail-view-title no-toc notoc lwptoc-ignore ez-toc-exclude ez-toc-ignore toc-ignore" id="goods-detail-title" data-toc-exclude="true" data-lwptoc-ignore="true"></div>
+                <span class="goods-detail-view-count" id="goods-detail-count"></span>
+            </div>
+            <div class="goods-detail-header-right"></div>
+        </div>
+        <div class="goods-category-detail-grid" id="goods-detail-grid">
+            <!-- 动态注入全量商品卡片 -->
+        </div>
     </div>
     <?php
     $output .= ob_get_clean();
@@ -570,12 +620,12 @@ function goods_exhibition_shortcode_callback($atts)
                             <span id="goods-quickview-tag" class="goods-quickview-badge-tag" style="display:none;"></span>
                         </div>
                         <div class="goods-quickview-title-wrap">
-                            <div id="goods-quickview-title" class="goods-quickview-title no-toc ez-toc-exclude lwptoc-ignore" role="heading" aria-level="3"></div>
+                            <div id="goods-quickview-title" class="goods-quickview-title no-toc notoc ez-toc-exclude lwptoc-ignore toc-ignore" data-toc-exclude="true" data-lwptoc-ignore="true"></div>
                             <span id="goods-quickview-new" class="goods-quickview-badge-new" style="display:none;">NEW</span>
                         </div>
                         <div id="goods-quickview-price" class="goods-quickview-price"></div>
                         <div class="goods-quickview-desc-wrapper">
-                            <div class="goods-quickview-desc-heading no-toc ez-toc-exclude lwptoc-ignore" role="heading" aria-level="4">商品详情与核心卖点</div>
+                            <div class="goods-quickview-desc-heading no-toc notoc ez-toc-exclude lwptoc-ignore toc-ignore" data-toc-exclude="true" data-lwptoc-ignore="true">商品详情与核心卖点</div>
                             <div id="goods-quickview-desc" class="goods-quickview-desc"></div>
                         </div>
                         <div id="goods-quickview-actions" class="goods-quickview-actions" style="display:none;">

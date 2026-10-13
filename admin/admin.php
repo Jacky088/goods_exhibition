@@ -977,6 +977,7 @@ function goods_exhibition_render_product_list_tab()
                     <p>还没有添加任何产品。<button type="button" class="ge-btn ge-btn-primary ge-btn-sm" id="ge-empty-add-btn" style="margin-left: 8px;">添加一个新产品</button></p>
                 <?php endif; ?>
             </div>
+        <?php else: ?>
             <form method="post" id="goods-exhibition-bulk-form" action="<?php echo esc_url($current_list_action_url); ?>">
                 <?php wp_nonce_field('goods_exhibition_bulk_delete', '_wpnonce_bulk'); ?>
                 <input type="hidden" name="goods_exhibition_bulk_action" value="delete">
