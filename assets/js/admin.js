@@ -1005,6 +1005,14 @@
             }
             $('#product_currency').val(detectedCurrency);
             $('#product_price').val(cleanPrice);
+            $('#product_badge_tag').val(product.badge_tag || '');
+            syncTagBoxFromInput('#product_badge_tag');
+
+            $('#product_brand').val(product.brand || '');
+            syncTagBoxFromInput('#product_brand');
+
+            $('#product_custom_brand').val(product.custom_brand || '').trigger('input');
+            $('#product_brand_logo').val(product.brand_logo || '').trigger('input');
 
             $('#product_url').val(product.url || '');
             $('#product_category').val(product.category || '');
@@ -1067,6 +1075,15 @@
             $form[0].reset();
             $('#product_currency').val('¥');
             $('#product_price').val('');
+
+            $('#product_badge_tag').val('');
+            syncTagBoxFromInput('#product_badge_tag');
+
+            $('#product_brand').val('');
+            syncTagBoxFromInput('#product_brand');
+
+            $('#product_custom_brand').val('').trigger('input');
+            $('#product_brand_logo').val('').trigger('input');
             $('#product_image_url').val('');
             $('#poster_image_url').val('');
             $('#product_image').val('');
@@ -1084,7 +1101,201 @@
 
             $('#product_name').trigger('input');
             $('#product_description').trigger('input');
+            $('.ge-quick-tag-btn').removeClass('is-active ge-btn-primary').addClass('ge-btn-secondary');
+            $('.ge-field-clear-btn').hide();
         }
+
+        function escapeTagHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 同步标签输入与 Tag Box 芯片容器展示
+        function syncTagBoxFromInput(targetSelector) {
+            var $input = $(targetSelector);
+            if (!$input.length) return;
+            var boxId = targetSelector.replace('#', '') + '_box';
+            var $box = $('#' + boxId);
+            if (!$box.length) return;
+
+            var max = parseInt($box.data('max'), 10) || 1;
+            var rawVal = $.trim($input.val());
+            var tags = [];
+
+            if (targetSelector === '#product_badge_tag') {
+                if (rawVal) {
+                    // 严格按标点分隔，不要按空格切分，保留带有 emoji 的标签整体（如「新品首发 🚀」）
+                    var parts = rawVal.split(/[,，、;；|]+/);
+                    for (var i = 0; i < parts.length; i++) {
+                        var p = $.trim(parts[i]);
+                        if (p && tags.indexOf(p) === -1) {
+                            tags.push(p);
+                        }
+                        if (tags.length >= max) break;
+                    }
+                }
+            } else if (targetSelector === '#product_brand') {
+                if (rawVal) {
+                    tags.push(rawVal);
+                }
+            }
+
+            var cleanVal = tags.join(', ');
+            $input.val(cleanVal);
+
+            var $chips = $box.find('.ge-tag-box-chips');
+            var $placeholder = $box.find('.ge-tag-box-placeholder');
+            $chips.empty();
+
+            if (tags.length > 0) {
+                $placeholder.hide();
+                for (var j = 0; j < tags.length; j++) {
+                    var tagText = tags[j];
+                    var $chip = $('<span class="ge-tag-chip" data-val="' + escapeTagHtml(tagText) + '">' +
+                        '<span class="ge-tag-chip-label">' + escapeTagHtml(tagText) + '</span>' +
+                        '<button type="button" class="ge-tag-chip-remove" title="移除此标签">&times;</button>' +
+                        '</span>');
+                    $chips.append($chip);
+                }
+            } else {
+                $placeholder.show();
+            }
+
+            // 同步预设胶囊按钮的高亮选中状态
+            if (targetSelector === '#product_badge_tag') {
+                $('.ge-quick-tag-btn[data-target="' + targetSelector + '"]').each(function() {
+                    var btnVal = $.trim($(this).data('val'));
+                    if (btnVal && tags.indexOf(btnVal) !== -1) {
+                        $(this).addClass('is-active ge-btn-primary').removeClass('ge-btn-secondary');
+                    } else {
+                        $(this).removeClass('is-active ge-btn-primary').addClass('ge-btn-secondary');
+                    }
+                });
+            } else if (targetSelector === '#product_brand') {
+                var currentLower = cleanVal.toLowerCase();
+                $('.ge-quick-tag-btn[data-target="' + targetSelector + '"]').each(function() {
+                    var btnVal = $.trim($(this).data('val')).toLowerCase();
+                    if (btnVal && btnVal === currentLower) {
+                        $(this).addClass('is-active ge-btn-primary').removeClass('ge-btn-secondary');
+                    } else {
+                        $(this).removeClass('is-active ge-btn-primary').addClass('ge-btn-secondary');
+                    }
+                });
+            }
+        }
+
+        // 品牌 Logo 媒体库选择器
+        $(document).on('click', '#ge_select_brand_logo_btn', function(e) {
+            e.preventDefault();
+            var brandLogoFrame = wp.media({
+                title: '选择品牌 Logo 图标',
+                button: { text: '使用此图标' },
+                library: { type: 'image' },
+                multiple: false
+            });
+            brandLogoFrame.on('select', function() {
+                var attachment = brandLogoFrame.state().get('selection').first().toJSON();
+                $('#product_brand_logo').val(attachment.url).trigger('input');
+            });
+            brandLogoFrame.open();
+        });
+
+        // 输入框右侧 X 快捷清除按钮 (仅用于自定义品牌文字与Logo输入框)
+        $(document).on('click', '.ge-field-clear-btn', function(e) {
+            e.preventDefault();
+            var targetSelector = $(this).data('target');
+            if (targetSelector) {
+                var $target = $(targetSelector);
+                $target.val('').trigger('input').trigger('change');
+            }
+            $(this).hide();
+        });
+
+        // 快捷标签点击注入与双向同步
+        $(document).on('click', '.ge-quick-tag-btn', function(e) {
+            e.preventDefault();
+            var $btn = $(this);
+            var target = $btn.data('target');
+            var val = $.trim($btn.data('val'));
+            if (!target || !val) return;
+
+            var $input = $(target);
+            var currentVal = $.trim($input.val());
+
+            if (target === '#product_badge_tag') {
+                // 特色卖点标签：支持多选，最多 2 个
+                var tags = currentVal ? currentVal.split(/[,，、;；|]+/).map($.trim).filter(Boolean) : [];
+                var existingIndex = tags.indexOf(val);
+
+                if (existingIndex !== -1) {
+                    // 已选中则取消
+                    tags.splice(existingIndex, 1);
+                } else {
+                    // 最多 2 个，若已有 2 个则替换第 2 个
+                    if (tags.length < 2) {
+                        tags.push(val);
+                    } else {
+                        tags[1] = val;
+                    }
+                }
+                $input.val(tags.join(', '));
+                syncTagBoxFromInput(target);
+            } else if (target === '#product_brand') {
+                // 所属品牌：单选内置品牌，再次点击反选清空
+                if (currentVal.toLowerCase() === val.toLowerCase()) {
+                    $input.val('');
+                } else {
+                    $input.val(val);
+                }
+                syncTagBoxFromInput(target);
+            }
+        });
+
+        // 标签胶囊右上角 X 移除按钮点击
+        $(document).on('click', '.ge-tag-chip-remove', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var $chip = $(this).closest('.ge-tag-chip');
+            var valToRemove = $chip.data('val');
+            var $box = $chip.closest('.ge-tag-box');
+            var target = $box.data('target');
+            if (!target) return;
+
+            var $input = $(target);
+            var currentVal = $.trim($input.val());
+
+            if (target === '#product_badge_tag') {
+                var tags = currentVal ? currentVal.split(/[,，、;；|]+/).map($.trim).filter(Boolean) : [];
+                var idx = tags.indexOf(valToRemove);
+                if (idx !== -1) {
+                    tags.splice(idx, 1);
+                }
+                $input.val(tags.join(', '));
+                syncTagBoxFromInput(target);
+            } else if (target === '#product_brand') {
+                $input.val('');
+                syncTagBoxFromInput(target);
+            }
+        });
+
+        // 监听带清除按钮的输入框，动态显示/隐藏右上角 X 按钮
+        $(document).on('input change', '.ge-input-with-clear', function() {
+            var $field = $(this);
+            var val = $.trim($field.val());
+            var $clearBtn = $field.closest('.ge-input-with-clear-wrap').find('.ge-field-clear-btn');
+            if (val.length > 0) {
+                $clearBtn.show();
+            } else {
+                $clearBtn.hide();
+            }
+        });
+
+        // 监听外部对隐藏标签域的修改驱动同步
+        $(document).on('change', '#product_badge_tag, #product_brand', function() {
+            var targetSelector = '#' + $(this).attr('id');
+            syncTagBoxFromInput(targetSelector);
+        });
 
         // 打开添加新产品弹窗（顶部主按钮 或 空状态按钮）
         $(document).on('click', '#ge-open-add-modal, #ge-empty-add-btn', function(e) {

@@ -345,6 +345,11 @@ function goods_exhibition_handle_product_form_action()
 
     $product_url = isset($_POST['product_url']) ? esc_url_raw($_POST['product_url']) : '';
     $product_category = isset($_POST['product_category']) ? sanitize_text_field($_POST['product_category']) : '';
+    $product_price_suffix = isset($_POST['product_price_suffix']) ? sanitize_text_field(wp_unslash($_POST['product_price_suffix'])) : '';
+    $product_badge_tag = isset($_POST['product_badge_tag']) ? sanitize_text_field(wp_unslash($_POST['product_badge_tag'])) : '';
+    $product_brand = isset($_POST['product_brand']) ? sanitize_text_field(wp_unslash($_POST['product_brand'])) : '';
+    $product_custom_brand = isset($_POST['product_custom_brand']) ? sanitize_text_field(wp_unslash($_POST['product_custom_brand'])) : '';
+    $product_brand_logo = isset($_POST['product_brand_logo']) ? esc_url_raw($_POST['product_brand_logo']) : '';
     $product_image_url_from_media = isset($_POST['product_image_url']) ? esc_url_raw($_POST['product_image_url']) : '';
     $product_is_new = isset($_POST['product_is_new']) ? 1 : 0;
     $product_is_poster = isset($_POST['product_is_poster']) ? 1 : 0;
@@ -427,9 +432,15 @@ function goods_exhibition_handle_product_form_action()
                 'name' => $product_name,
                 'description' => $product_description,
                 'price' => $product_price,
+                'price_suffix' => $product_price_suffix,
                 'image_url' => $final_image_url,
                 'url' => $product_url,
                 'category' => $product_category,
+                'badge_tag' => $product_badge_tag,
+                'cta_text' => $product_cta_text,
+                'brand' => $product_brand,
+                'custom_brand' => $product_custom_brand,
+                'brand_logo' => $product_brand_logo,
                 'is_new' => $product_is_new,
                 'is_poster' => $product_is_poster,
                 'poster_image_url' => $final_poster_image_url,
@@ -463,9 +474,15 @@ function goods_exhibition_handle_product_form_action()
                 'name' => $product_name,
                 'description' => $product_description,
                 'price' => $product_price,
+                'price_suffix' => $product_price_suffix,
                 'image_url' => $final_image_url,
                 'url' => $product_url,
                 'category' => $product_category,
+                'badge_tag' => $product_badge_tag,
+                'cta_text' => $product_cta_text,
+                'brand' => $product_brand,
+                'custom_brand' => $product_custom_brand,
+                'brand_logo' => $product_brand_logo,
                 'is_new' => $product_is_new,
                 'is_poster' => $product_is_poster,
                 'poster_image_url' => $final_poster_image_url,
@@ -914,7 +931,10 @@ function goods_exhibition_render_product_list_tab()
                                             echo esc_html(wp_html_excerpt($product['description'], 48, '...'));
                                         }
                                     ?></td>
-                                    <td class="col-price"><?php echo esc_html($product['price'] ? goods_exhibition_format_price_display($product['price']) : '—'); ?></td>
+                                    <td class="col-price"><?php
+                                        $suffix = isset($product['price_suffix']) ? $product['price_suffix'] : '';
+                                        echo esc_html($product['price'] ? goods_exhibition_format_price_display($product['price'], $suffix) : '—');
+                                    ?></td>
                                     <td class="col-category">
                                         <?php if (!empty($product['category'])): ?>
                                             <span class="ge-badge-pill ge-badge-cat"><?php echo esc_html($product['category']); ?></span>
@@ -929,7 +949,10 @@ function goods_exhibition_render_product_list_tab()
                                         <?php if ($product['is_poster'] == 1): ?>
                                             <span class="ge-badge-pill ge-badge-poster">海报</span>
                                         <?php endif; ?>
-                                        <?php if ($product['is_new'] != 1 && $product['is_poster'] != 1): ?>
+                                        <?php if (!empty($product['badge_tag'])): ?>
+                                            <span class="ge-badge-pill ge-badge-tag-pill"><?php echo esc_html($product['badge_tag']); ?></span>
+                                        <?php endif; ?>
+                                        <?php if ($product['is_new'] != 1 && $product['is_poster'] != 1 && empty($product['badge_tag'])): ?>
                                             <span class="ge-text-muted">—</span>
                                         <?php endif; ?>
                                     </td>
@@ -1027,6 +1050,131 @@ function goods_exhibition_render_product_list_tab()
                                     placeholder="请输入金额（如：10999起 或 4,199 起）">
                             </div>
                             <p class="ge-help-text">可选择常用货币符号；金额框内支持填写说明，如 "4,199 起（含教育优惠）"</p>
+                        </div>
+
+
+                        <!-- 特色卖点标签 (用于卡片底栏胶囊) -->
+                        <div class="ge-form-group">
+                            <label class="ge-label">特色卖点标签（卡片底部胶囊，最多可选2个）</label>
+                            <input type="hidden" name="product_badge_tag" id="product_badge_tag" value="">
+                            <div class="ge-tag-box" id="product_badge_tag_box" data-target="#product_badge_tag" data-max="2">
+                                <span class="ge-tag-box-placeholder">点击下方预设胶囊自动注入（最多可选 2 个）</span>
+                                <div class="ge-tag-box-chips"></div>
+                            </div>
+                            <div class="ge-quick-tag-bar" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;">
+                                <span class="ge-help-text" style="align-self:center; margin:0 4px 0 0;">预设胶囊：</span>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="热销 🔥">热销 🔥</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="爆款推荐 💥">爆款推荐 💥</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="新品首发 🚀">新品首发 🚀</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="年度旗舰 👑">年度旗舰 👑</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="轻薄 🍃">轻薄 🍃</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="折叠旗舰 📱">折叠旗舰 📱</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="旗舰芯 ⚡">旗舰芯 ⚡</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="超长续航 🔋">超长续航 🔋</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="百瓦闪充 ⚡">百瓦闪充 ⚡</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="潜望长焦 🔭">潜望长焦 🔭</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="大师影像 📷">大师影像 📷</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="全画幅 📷">全画幅 📷</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="Hi-Res金标 🎵">Hi-Res金标 🎵</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="主动降噪 🎧">主动降噪 🎧</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="HiFi音质 🎶">HiFi音质 🎶</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="智能降噪 🔇">智能降噪 🔇</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="IP68防水 💧">IP68防水 💧</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="冷静电竞 ❄️">冷静电竞 ❄️</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="高刷电竞 🎮">高刷电竞 🎮</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="护眼屏 👁️">护眼屏 👁️</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="钛金属 🛡️">钛金属 🛡️</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="超轻量 🪶">超轻量 🪶</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="雷电4 ⚡">雷电4 ⚡</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="自研芯片 🧠">自研芯片 🧠</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="限时特惠 🏷️">限时特惠 🏷️</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="24期免息 💳">24期免息 💳</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="极速发货 📦">极速发货 📦</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="全国联保 🛡️">全国联保 🛡️</button>
+                            </div>
+                            <p class="ge-help-text">卡片左下角特色卖点，最多可选 2 个。鼠标悬浮已选标签可点击右上角 × 移除。</p>
+                        </div>
+
+                        <!-- 所属品牌 (仅支持选择内置品牌) -->
+                        <div class="ge-form-group">
+                            <label class="ge-label">所属品牌 (内置 35 款官方品牌)</label>
+                            <input type="hidden" name="product_brand" id="product_brand" value="">
+                            <div class="ge-tag-box" id="product_brand_box" data-target="#product_brand" data-max="1">
+                                <span class="ge-tag-box-placeholder">点击下方内置品牌自动注入</span>
+                                <div class="ge-tag-box-chips"></div>
+                            </div>
+                            <div class="ge-quick-tag-bar" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;">
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="小米">小米</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="华为">华为</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="苹果">苹果</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="大疆">大疆</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="索尼">索尼</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="荣耀">荣耀</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="OPPO">OPPO</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="vivo">vivo</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="一加">一加</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="iQOO">iQOO</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="三星">三星</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="联想">联想</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="ROG">ROG</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="华硕">华硕</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="外星人">外星人</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="戴尔">戴尔</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="雷蛇">雷蛇</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="英特尔">英特尔</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="AMD">AMD</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="英伟达">英伟达</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="微软">微软</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="Bose">Bose</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="漫步者">漫步者</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="罗技">罗技</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="佳能">佳能</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="尼康">尼康</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="富士">富士</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="徕卡">徕卡</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="马歇尔">马歇尔</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="魅族">魅族</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="绿联">绿联</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="安克">安克</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="影石">影石</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="米家">米家</button>
+                                <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_brand" data-val="Hi-Res">Hi-Res</button>
+                            </div>
+                            <p class="ge-help-text">仅支持点选内置 35 款官方品牌，系统自动匹配官方高清矢量标。鼠标悬浮已选标签可点击右上角 × 移除。</p>
+                        </div>
+
+                        <!-- 自定义品牌 (可选) -->
+                        <div class="ge-form-group">
+                            <label class="ge-label">自定义品牌 (可选)</label>
+                            
+                            <div style="margin-bottom:12px;">
+                                <label for="product_custom_brand" style="font-size:12.5px; font-weight:600; color:#475569; display:block; margin-bottom:5px;">自定义品牌文字 / 名称</label>
+                                <div class="ge-input-with-clear-wrap">
+                                    <input type="text" name="product_custom_brand" id="product_custom_brand" class="ge-input ge-input-with-clear"
+                                        placeholder="输入自定义品牌名称（如：DJI大疆创新、极米、戴森、雷鸟等）" maxlength="50" style="padding-right:38px;">
+                                    <button type="button" class="ge-field-clear-btn" data-target="#product_custom_brand" title="清除自定义品牌文字" style="display:none;">&times;</button>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom:8px;">
+                                <label for="product_brand_logo" style="font-size:12.5px; font-weight:600; color:#475569; display:block; margin-bottom:5px;">自定义品牌 Logo 图标 (可选)</label>
+                                <div style="display:flex; gap:8px;">
+                                    <div class="ge-input-with-clear-wrap" style="flex:1;">
+                                        <input type="url" name="product_brand_logo" id="product_brand_logo" class="ge-input ge-input-with-clear"
+                                            placeholder="输入品牌 Logo 图片链接（https://...）或从媒体库选择" style="padding-right:38px;">
+                                        <button type="button" class="ge-field-clear-btn" data-target="#product_brand_logo" title="清除Logo链接" style="display:none;">&times;</button>
+                                    </div>
+                                    <button type="button" class="ge-btn ge-btn-secondary" id="ge_select_brand_logo_btn" style="white-space:nowrap; flex-shrink:0;">媒体库选择</button>
+                                </div>
+                            </div>
+
+                            <div style="margin-top:8px; padding:8px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; font-size:12px; line-height:1.6; color:#64748b;">
+                                <p style="margin:0 0 3px 0; font-weight:600; color:#334155;">💡 自定义说明：</p>
+                                <ul style="margin:0; padding-left:16px;">
+                                    <li>在此填写的自定义品牌将优先覆盖上方内置品牌。</li>
+                                    <li>建议上传 <strong>1:1</strong> 正方形透明背景 <strong>SVG / PNG</strong> 图标（推荐 80×80px）；若未上传图标，系统自动生成文字徽标。</li>
+                                </ul>
+                            </div>
                         </div>
 
                         <!-- 跳转链接 -->

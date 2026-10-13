@@ -3,7 +3,7 @@
  * Plugin Name: 好物页面插件
  * Plugin URI: https://github.com/Jacky088/goods_exhibition
  * Description: 一个展示好物商品的WordPress插件（已通过安全审查和优化）
- * Version: 2.0.0
+ * Version: 2.1.0
  * Author: 木木
  * Author URI: https://github.com/Jacky088/goods_exhibition
  * License: GPL v2 or later
@@ -19,7 +19,7 @@ if (!defined('WPINC')) {
 }
 
 // 定义插件版本
-define('GOODS_EXHIBITION_VERSION', '2.0.0');
+define('GOODS_EXHIBITION_VERSION', '2.1.0');
 // 定义插件路径
 define('GOODS_EXHIBITION_PATH', plugin_dir_path(__FILE__));
 // 定义插件URL
@@ -135,9 +135,15 @@ function goods_exhibition_setup_database()
         name varchar(255) NOT NULL,
         description text NOT NULL,
         price varchar(50) DEFAULT '' NOT NULL,
+        price_suffix varchar(20) DEFAULT '' NOT NULL,
         image_url varchar(500) NOT NULL,
         url varchar(500) DEFAULT '' NOT NULL,
         category varchar(255) DEFAULT '' NOT NULL,
+        badge_tag varchar(50) DEFAULT '' NOT NULL,
+        cta_text varchar(50) DEFAULT '' NOT NULL,
+        brand varchar(50) DEFAULT '' NOT NULL,
+        custom_brand varchar(50) DEFAULT '' NOT NULL,
+        brand_logo varchar(500) DEFAULT '' NOT NULL,
         is_new tinyint(1) DEFAULT 0 NOT NULL,
         is_poster tinyint(1) DEFAULT 0 NOT NULL,
         poster_image_url varchar(500) DEFAULT '' NOT NULL,
@@ -149,11 +155,35 @@ function goods_exhibition_setup_database()
 
     dbDelta($sql);
 
+    // 确保升级时新字段可靠补齐
+    $columns = $wpdb->get_col("SHOW COLUMNS FROM `{$table_name}`");
+    if (!empty($columns)) {
+        if (!in_array('badge_tag', $columns)) {
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `badge_tag` varchar(50) DEFAULT '' NOT NULL AFTER `category`");
+        }
+        if (!in_array('price_suffix', $columns)) {
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `price_suffix` varchar(20) DEFAULT '' NOT NULL AFTER `price`");
+        }
+        if (!in_array('cta_text', $columns)) {
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `cta_text` varchar(50) DEFAULT '' NOT NULL AFTER `badge_tag`");
+        }
+        if (!in_array('brand', $columns)) {
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `brand` varchar(50) DEFAULT '' NOT NULL AFTER `cta_text`");
+        }
+        if (!in_array('custom_brand', $columns)) {
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `custom_brand` varchar(50) DEFAULT '' NOT NULL AFTER `brand`");
+        }
+        if (!in_array('brand_logo', $columns)) {
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `brand_logo` varchar(500) DEFAULT '' NOT NULL AFTER `custom_brand`");
+        }
+    }
+
     // 补齐可能缺失的索引（dbDelta 对索引的处理不完整，旧版升级时手动补回）
     $indices = array(
         'category_idx' => 'category',
         'is_poster_idx' => 'is_poster',
-        'is_new_idx' => 'is_new'
+        'is_new_idx' => 'is_new',
+        'brand_idx' => 'brand'
     );
     foreach ($indices as $index_name => $column_name) {
         $index_exists = $wpdb->get_results(
@@ -342,10 +372,13 @@ function goods_exhibition_asset_version($rel_path)
  */
 function goods_exhibition_enqueue_scripts()
 {
+    wp_register_style('goods-exhibition-style', GOODS_EXHIBITION_URL . 'assets/css/style.css', array(), goods_exhibition_asset_version('assets/css/style.css'));
+    wp_register_script('goods-exhibition-script', GOODS_EXHIBITION_URL . 'assets/js/script.js', array(), goods_exhibition_asset_version('assets/js/script.js'), true);
+
     global $post;
     if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'goods_exhibition')) {
-        wp_enqueue_style('goods-exhibition-style', GOODS_EXHIBITION_URL . 'assets/css/style.css', array(), goods_exhibition_asset_version('assets/css/style.css'));
-        wp_enqueue_script('goods-exhibition-script', GOODS_EXHIBITION_URL . 'assets/js/script.js', array(), goods_exhibition_asset_version('assets/js/script.js'), true);
+        wp_enqueue_style('goods-exhibition-style');
+        wp_enqueue_script('goods-exhibition-script');
     }
 }
 add_action('wp_enqueue_scripts', 'goods_exhibition_enqueue_scripts');

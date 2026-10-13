@@ -254,21 +254,32 @@ function goods_exhibition_code_stamp()
 }
 
 /**
- * 格式化产品价格展示（规范化货币符号）
+ * 格式化产品价格展示（规范化货币符号与后缀）
  *
  * 将历史数据或手动输入中存在的 RMB、CNY 文本代号统一联动转换为规范货币符号 ¥，
- * 确保后台选择的货币符号与前台展示严格联动一致。
+ * 并支持灵活追加“起”或“到手价”等促销修饰词。
  *
  * @param string $price 原始价格字符串
+ * @param string $suffix 价格后缀（如“起”、“到手价”，可选）
  * @return string 规范化后的展示价格
  */
-function goods_exhibition_format_price_display($price)
+function goods_exhibition_format_price_display($price, $suffix = '')
 {
     if (empty($price)) {
         return '';
     }
     // 将历史或录入的 RMB、CNY 统一替换为对应的规范货币符号 ¥
-    return preg_replace('/^(RMB|CNY)\s*/iu', '¥', trim($price));
+    $formatted = preg_replace('/^(RMB|CNY)\s*/iu', '¥', trim($price));
+
+    $suffix = trim($suffix);
+    if (!empty($suffix)) {
+        // 如果价格文本尚未包含该后缀，则平滑追加
+        $has_suffix = function_exists('mb_strpos') ? (mb_strpos($formatted, $suffix) !== false) : (strpos($formatted, $suffix) !== false);
+        if (!$has_suffix) {
+            $formatted .= $suffix;
+        }
+    }
+    return $formatted;
 }
 
 

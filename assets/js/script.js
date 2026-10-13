@@ -358,20 +358,40 @@
                 }
             }
 
-            // 2. 分类标签
+            // 2. 分类标签、品牌标签与卖点胶囊
             if (catEl) {
                 if (data.category) {
                     catEl.textContent = data.category;
                     catEl.style.display = 'inline-flex';
-                    if (catEl.parentElement) {
-                        catEl.parentElement.style.display = 'flex';
-                    }
                 } else {
                     catEl.style.display = 'none';
-                    if (catEl.parentElement) {
-                        catEl.parentElement.style.display = 'none';
-                    }
                 }
+            }
+
+            var brandEl = document.getElementById('goods-quickview-brand');
+            if (brandEl) {
+                if (data.brand) {
+                    brandEl.textContent = data.brand;
+                    brandEl.style.display = 'inline-flex';
+                } else {
+                    brandEl.style.display = 'none';
+                }
+            }
+
+            var tagEl = document.getElementById('goods-quickview-tag');
+            if (tagEl) {
+                if (data.badge_tag) {
+                    tagEl.textContent = data.badge_tag;
+                    tagEl.style.display = 'inline-flex';
+                } else {
+                    tagEl.style.display = 'none';
+                }
+            }
+
+            var tagsWrap = modal.querySelector('.goods-quickview-tags');
+            if (tagsWrap) {
+                var hasAnyTag = (data.category || data.brand || data.badge_tag);
+                tagsWrap.style.display = hasAnyTag ? 'flex' : 'none';
             }
 
             // 3. NEW 标签（紧随商品标题右侧同行）
@@ -404,6 +424,10 @@
                 if (data.url) {
                     linkEl.href = data.url;
                     actionsEl.style.display = 'block';
+                    var btnTextEl = document.getElementById('goods-quickview-btn-text');
+                    if (btnTextEl) {
+                        btnTextEl.textContent = (data.cta_text && data.cta_text !== '详情') ? data.cta_text : '访问商品 / 立即抢购';
+                    }
                 } else {
                     actionsEl.style.display = 'none';
                 }

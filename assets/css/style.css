@@ -1,8 +1,8 @@
 /**
- * 好物页面插件前端样式
+ * 濂界墿椤甸潰鎻掍欢鍓嶇鏍峰紡
  */
 
-/* 分类标题居中，自适应布局；两侧配渐隐细线提升质感 */
+/* 鍒嗙被鏍囬灞呬腑锛岃嚜閫傚簲甯冨眬锛涗袱渚ч厤娓愰殣缁嗙嚎鎻愬崌璐ㄦ劅 */
 .goods-exhibition-category-title {
     width: 100%;
     max-width: 800px;
@@ -16,10 +16,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: none !important; /* 覆盖主题对 h2 添加的默认下边框实线（!important 确保压过主题高优先级规则） */
+    border: none !important; /* 瑕嗙洊涓婚瀵?h2 娣诲姞鐨勯粯璁や笅杈规瀹炵嚎锛?important 纭繚鍘嬭繃涓婚楂樹紭鍏堢骇瑙勫垯锛?*/
 }
 
-/* 标题两侧渐隐线条：靠近文字一侧实、外侧渐虚，颜色随标题文字自动适配明暗主题 */
+/* 鏍囬涓や晶娓愰殣绾挎潯锛氶潬杩戞枃瀛椾竴渚у疄銆佸渚ф笎铏氾紝棰滆壊闅忔爣棰樻枃瀛楄嚜鍔ㄩ€傞厤鏄庢殫涓婚 */
 .goods-exhibition-category-title::before,
 .goods-exhibition-category-title::after {
     content: '';
@@ -61,13 +61,13 @@
     }
 }
 
-/* 全局盒模型 */
+/* 鍏ㄥ眬鐩掓ā鍨?*/
 .goods-exhibition-container,
 .goods-exhibition-container * {
     box-sizing: border-box;
 }
 
-/* 外层滑动容器 */
+/* 澶栧眰婊戝姩瀹瑰櫒 */
 .goods-exhibition-wrapper {
     position: relative;
     max-width: 1200px;
@@ -75,11 +75,11 @@
     padding: 30px 40px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
     background-color: #fdfdfd;
-    border-radius: 24px !important; /* 防止主题 reset 清零圆角，导致 box-shadow 呈直角矩形 */
+    border-radius: 24px !important; /* 闃叉涓婚 reset 娓呴浂鍦嗚锛屽鑷?box-shadow 鍛堢洿瑙掔煩褰?*/
     box-shadow: 0 4px 25px rgba(0, 0, 0, 0.07);
 }
 
-/* 横向滑动条容器 - 隐藏滚动条 */
+/* 妯悜婊戝姩鏉″鍣?- 闅愯棌婊氬姩鏉?*/
 .goods-exhibition-slider {
     display: flex;
     overflow-x: auto;
@@ -91,9 +91,9 @@
     overscroll-behavior-x: contain;
     overscroll-behavior-y: auto;
     scroll-snap-type: x proximity;
-    /* 注意：overflow-x 非 visible 时，overflow-y 会被计算为 auto，即垂直方向也裁切。
-       卡片阴影向下扩散约 22px（hover 时约 34px），底部内边距必须大于扩散距离，
-       否则阴影被 padding box 底边硬切成直角。此处用负外边距抵消增量，页面布局不变。 */
+    /* 娉ㄦ剰锛歰verflow-x 闈?visible 鏃讹紝overflow-y 浼氳璁＄畻涓?auto锛屽嵆鍨傜洿鏂瑰悜涔熻鍒囥€?
+       鍗＄墖闃村奖鍚戜笅鎵╂暎绾?22px锛坔over 鏃剁害 34px锛夛紝搴曢儴鍐呰竟璺濆繀椤诲ぇ浜庢墿鏁ｈ窛绂伙紝
+       鍚﹀垯闃村奖琚?padding box 搴曡竟纭垏鎴愮洿瑙掋€傛澶勭敤璐熷杈硅窛鎶垫秷澧為噺锛岄〉闈㈠竷灞€涓嶅彉銆?*/
     padding-bottom: 42px;
     margin-bottom: -34px;
     scrollbar-width: none;
@@ -102,7 +102,7 @@
     display: none;
 }
 
-/* 商品卡片 */
+/* 鍟嗗搧鍗＄墖 */
 .goods-exhibition-item {
     position: relative;
     overflow: hidden;
@@ -126,7 +126,7 @@
     -webkit-tap-highlight-color: transparent !important;
 }
 
-/* 常规商品卡片（点击卡片任何位置均唤起详情弹窗） */
+/* 甯歌鍟嗗搧鍗＄墖锛堢偣鍑诲崱鐗囦换浣曚綅缃潎鍞よ捣璇︽儏寮圭獥锛?*/
 .goods-exhibition-item.is-clickable,
 .goods-exhibition-item:not(.poster-item) {
     cursor: pointer;
@@ -142,7 +142,7 @@
     box-shadow: 0 8px 14px rgba(0, 0, 0, 0.05) !important;
 }
 
-/* 有链接的卡片（海报） */
+/* 鏈夐摼鎺ョ殑鍗＄墖锛堟捣鎶ワ級 */
 .goods-exhibition-item.has-link {
     cursor: pointer;
     display: flex;
@@ -155,19 +155,19 @@
     text-decoration: none;
 }
 
-/* 悬浮动画 */
+/* 鎮诞鍔ㄧ敾 */
 .goods-exhibition-item:hover {
     transform: translateY(-6px);
     box-shadow: 0 14px 20px rgba(0, 0, 0, 0.09);
 }
 
-/* 文字内容 */
+/* 鏂囧瓧鍐呭 */
 .goods-exhibition-content {
     padding: 20px 20px 8px 20px;
     flex-grow: 1;
 }
 
-/* 标题 - 允许换行，限制2行 + 统一固定2行占位高度保证水平对齐 */
+/* 鏍囬 - 鍏佽鎹㈣锛岄檺鍒?琛?+ 缁熶竴鍥哄畾2琛屽崰浣嶉珮搴︿繚璇佹按骞冲榻?*/
 .goods-exhibition-content > h3.goods-exhibition-title {
     margin: 0 0 6px !important;
     font-weight: 700 !important;
@@ -179,7 +179,7 @@
     word-break: break-word !important;
 }
 
-/* 常规商品卡片标题（排除海报）：固定2行占位高度（18px * 1.3 * 2行 ≈ 48px）及2行截断 */
+/* 甯歌鍟嗗搧鍗＄墖鏍囬锛堟帓闄ゆ捣鎶ワ級锛氬浐瀹?琛屽崰浣嶉珮搴︼紙18px * 1.3 * 2琛?鈮?48px锛夊強2琛屾埅鏂?*/
 .goods-exhibition-item:not(.poster-item) .goods-exhibition-content > h3.goods-exhibition-title {
     min-height: 48px !important;
     display: -webkit-box !important;
@@ -189,12 +189,12 @@
     text-overflow: ellipsis !important;
 }
 
-/* 带 NEW 标签时，标题右侧预留避让间距，防止长品名碰撞右上角标签 */
+/* 甯?NEW 鏍囩鏃讹紝鏍囬鍙充晶棰勭暀閬胯闂磋窛锛岄槻姝㈤暱鍝佸悕纰版挒鍙充笂瑙掓爣绛?*/
 .goods-exhibition-item.is-new .goods-exhibition-content > h3.goods-exhibition-title {
     padding-right: 56px !important;
 }
 
-/* NEW标签 - 悬浮在卡片右上角的独立角标（HTML span 替代旧版内嵌 SVG：继承页面字体渲染，明暗主题下均有良好观感） */
+/* NEW鏍囩 - 鎮诞鍦ㄥ崱鐗囧彸涓婅鐨勭嫭绔嬭鏍囷紙HTML span 鏇夸唬鏃х増鍐呭祵 SVG锛氱户鎵块〉闈㈠瓧浣撴覆鏌擄紝鏄庢殫涓婚涓嬪潎鏈夎壇濂借鎰燂級 */
 .goods-exhibition-new-badge {
     position: absolute !important;
     top: 20px !important;
@@ -218,11 +218,11 @@
     box-shadow: 0 2px 6px rgba(255, 77, 48, 0.35) !important;
 }
 
-/* 商品描述 - 限制2行 + 统一固定2行占位高度保证水平对齐 */
+/* 鍟嗗搧鎻忚堪 - 闄愬埗2琛?+ 缁熶竴鍥哄畾2琛屽崰浣嶉珮搴︿繚璇佹按骞冲榻?*/
 .goods-exhibition-description {
     font-size: 14px;
     line-height: 1.5;
-    min-height: 42px; /* 14px * 1.5 * 2行 = 42px，统一2行占位高度 */
+    min-height: 42px; /* 14px * 1.5 * 2琛?= 42px锛岀粺涓€2琛屽崰浣嶉珮搴?*/
     color: #444;
     margin-bottom: 8px;
     display: -webkit-box;
@@ -232,7 +232,7 @@
     text-overflow: ellipsis;
 }
 
-/* 价格与详情按钮同行布局 */
+/* 浠锋牸涓庤鎯呮寜閽悓琛屽竷灞€ */
 .goods-exhibition-price-row {
     display: flex;
     align-items: center;
@@ -243,11 +243,11 @@
     min-height: 32px;
 }
 
-/* 价格 */
+/* 价格 - 统一醒目红色，与商品详情全貌弹窗保持完全一致 */
 .goods-exhibition-price {
-    font-weight: 600;
+    font-weight: 700;
     font-size: 16px;
-    color: #666;
+    color: #e11d48;
     margin-bottom: 0;
     line-height: 1.4;
     white-space: nowrap;
@@ -257,7 +257,7 @@
     flex: 1;
 }
 
-/* 详情药丸按钮（与价格同行居右、尺寸适中、微动效） */
+/* 璇︽儏鑽父鎸夐挳锛堜笌浠锋牸鍚岃灞呭彸銆佸昂瀵搁€備腑銆佸井鍔ㄦ晥锛?*/
 .goods-exhibition-quickview-btn {
     display: inline-flex;
     align-items: center;
@@ -298,7 +298,7 @@
     box-shadow: none !important;
 }
 
-/* 标题外链与图片外链支持 */
+/* 鏍囬澶栭摼涓庡浘鐗囧閾炬敮鎸?*/
 .goods-exhibition-title-link {
     color: inherit !important;
     text-decoration: none !important;
@@ -307,13 +307,13 @@
     color: #0071e3 !important;
 }
 
-/* 图片容器 - 固定宽高比，统一卡片高度，点击唤起详情弹窗 */
+/* 鍥剧墖瀹瑰櫒 - 鍥哄畾瀹介珮姣旓紝缁熶竴鍗＄墖楂樺害锛岀偣鍑诲敜璧疯鎯呭脊绐?*/
 .goods-exhibition-image-container {
     padding: 0 20px 20px 20px;
     flex-shrink: 0;
     position: relative;
-    overflow: hidden; /* 防止图片占位背景出现直角 */
-    border-radius: 0 0 24px 24px; /* 与卡片底部圆角保持一致 */
+    overflow: hidden; /* 闃叉鍥剧墖鍗犱綅鑳屾櫙鍑虹幇鐩磋 */
+    border-radius: 0 0 24px 24px; /* 涓庡崱鐗囧簳閮ㄥ渾瑙掍繚鎸佷竴鑷?*/
     cursor: pointer;
     outline: none !important;
     border: none !important;
@@ -337,7 +337,7 @@
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
     user-select: none;
     -webkit-user-drag: none;
-    pointer-events: none !important; /* 核心：让点击事件直接由容器接管，彻底杜绝主题或灯箱插件监听 img 点击并弹出大图画廊 */
+    pointer-events: none !important; /* 鏍稿績锛氳鐐瑰嚮浜嬩欢鐩存帴鐢卞鍣ㄦ帴绠★紝褰诲簳鏉滅粷涓婚鎴栫伅绠辨彃浠剁洃鍚?img 鐐瑰嚮骞跺脊鍑哄ぇ鍥剧敾寤?*/
     outline: none !important;
     border: none !important;
     background: #f5f5f7;
@@ -357,7 +357,7 @@
 }
 
 /* ========================================
-   箭头按钮 - 渐显效果
+   绠ご鎸夐挳 - 娓愭樉鏁堟灉
    ======================================== */
 .goods-exhibition-arrow {
     position: absolute;
@@ -381,7 +381,7 @@
     opacity: 0;
 }
 
-/* hover wrapper 时才显示箭头 */
+/* hover wrapper 鏃舵墠鏄剧ず绠ご */
 .goods-exhibition-wrapper:hover .goods-exhibition-arrow {
     opacity: 1;
 }
@@ -404,7 +404,7 @@
     right: 8px;
 }
 
-/* 空状态 */
+/* 绌虹姸鎬?*/
 .goods-exhibition-empty {
     text-align: center;
     padding: 30px;
@@ -412,7 +412,7 @@
     color: #86868b;
 }
 
-/* 平板端: 适度缩放并平滑滑动 */
+/* 骞虫澘绔? 閫傚害缂╂斁骞跺钩婊戞粦鍔?*/
 @media (max-width: 1024px) and (min-width: 769px) {
     .goods-exhibition-item {
         flex: 0 0 calc(50% - 20px);
@@ -422,7 +422,7 @@
     }
 }
 
-/* 平板竖屏/桌面小窗口: 突出当前卡片并露出一角提示可滑动 */
+/* 骞虫澘绔栧睆/妗岄潰灏忕獥鍙? 绐佸嚭褰撳墠鍗＄墖骞堕湶鍑轰竴瑙掓彁绀哄彲婊戝姩 */
 @media (max-width: 768px) and (min-width: 481px) {
     .goods-exhibition-wrapper {
         padding: 24px 16px;
@@ -438,7 +438,7 @@
     }
 }
 
-/* 手机端: 宽度自适应并优化紧凑内边距 */
+/* 鎵嬫満绔? 瀹藉害鑷€傚簲骞朵紭鍖栫揣鍑戝唴杈硅窛 */
 @media (max-width: 480px) {
     .goods-exhibition-wrapper {
         padding: 20px 10px;
@@ -501,14 +501,14 @@
 }
 
 /* ========================================
-   海报幻灯片样式
+   娴锋姤骞荤伅鐗囨牱寮?
    ======================================== */
 
-/* 海报容器 - 完全覆盖基础wrapper样式，无padding、无背景色间距 */
+/* 娴锋姤瀹瑰櫒 - 瀹屽叏瑕嗙洊鍩虹wrapper鏍峰紡锛屾棤padding銆佹棤鑳屾櫙鑹查棿璺?*/
 .goods-exhibition-wrapper.poster-slider {
     margin: 0 auto;
     padding: 0;
-    border-radius: 18px !important; /* 与基础 wrapper 的 !important 同优先级，维持海报 18px 圆角不变 */
+    border-radius: 18px !important; /* 涓庡熀纭€ wrapper 鐨?!important 鍚屼紭鍏堢骇锛岀淮鎸佹捣鎶?18px 鍦嗚涓嶅彉 */
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     background: #fff;
@@ -520,7 +520,7 @@
     min-height: 0;
 }
 
-/* 海报滑动轨道 - 覆盖基础slider的padding */
+/* 娴锋姤婊戝姩杞ㄩ亾 - 瑕嗙洊鍩虹slider鐨刾adding */
 .goods-exhibition-wrapper.poster-slider .poster-slider-track {
     display: flex;
     overflow-x: auto;
@@ -529,9 +529,9 @@
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
     padding: 0;
-    /* 重置基础slider为补偿卡片阴影而设的-34px底部负外边距：
-       该负边距会把poster-inner（overflow:hidden BFC）的自动高度缩减34px，
-       导致海报底部被固定裁掉34px，可视高宽比随窗口宽度漂移（越窄越扁） */
+    /* 閲嶇疆鍩虹slider涓鸿ˉ鍋垮崱鐗囬槾褰辫€岃鐨?34px搴曢儴璐熷杈硅窛锛?
+       璇ヨ礋杈硅窛浼氭妸poster-inner锛坥verflow:hidden BFC锛夌殑鑷姩楂樺害缂╁噺34px锛?
+       瀵艰嚧娴锋姤搴曢儴琚浐瀹氳鎺?4px锛屽彲瑙嗛珮瀹芥瘮闅忕獥鍙ｅ搴︽紓绉伙紙瓒婄獎瓒婃墎锛?*/
     margin-bottom: 0;
     touch-action: auto;
     touch-action: pan-y pan-x;
@@ -559,7 +559,7 @@
     box-shadow: none;
 }
 
-/* 海报图片容器 - 固定宽高比，强制裁切铺满 */
+/* 娴锋姤鍥剧墖瀹瑰櫒 - 鍥哄畾瀹介珮姣旓紝寮哄埗瑁佸垏閾烘弧 */
 .goods-exhibition-poster-img-wrap {
     position: relative;
     width: 100%;
@@ -570,7 +570,7 @@
     min-width: 0;
 }
 
-/* 海报图片 - 绝对定位铺满容器 */
+/* 娴锋姤鍥剧墖 - 缁濆瀹氫綅閾烘弧瀹瑰櫒 */
 .goods-exhibition-poster-img {
     position: absolute;
     inset: 0;
@@ -588,66 +588,9 @@
     margin: 0;
 }
 
-/* 海报文字 - 叠加在图片底部 */
-.goods-exhibition-wrapper.poster-slider .goods-exhibition-content.poster-content {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    flex-wrap: wrap; /* 允许价格换行至标题下方 */
-    align-items: center;
-    gap: 16px;
-    /* 底部预留圆点指示器的空间，避免圆点叠在描述文字上 */
-    padding: 14px 24px 34px;
-    background: linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%);
-    text-shadow: none;
-    max-width: none;
-    border-radius: 0;
-    backdrop-filter: none;
-    z-index: 10;
-}
+/* 海报文字叠加层样式见下方 v2.1.0 首屏 Banner 强化区域（统一样式源，避免特异性冲突） */
 
-.goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-title {
-    color: #fff !important;
-    font-size: 1.4rem !important;
-    font-weight: 700 !important;
-    white-space: nowrap !important;
-    margin: 0 !important;
-    /* 允许标题收缩并显示省略号，防止长标题把价格挤出屏幕（价格保持不收缩） */
-    min-width: 0;
-    flex-shrink: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
-}
-
-.goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-description {
-    font-size: 1.1rem;
-    margin: 0;
-    color: rgba(255,255,255,0.9);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    -webkit-line-clamp: unset;
-    display: block;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
-    min-height: 0;
-}
-
-.goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-price {
-    font-weight: 600;
-    font-size: 1.2rem;
-    color: #ff6b4a;
-    white-space: nowrap;
-    flex-shrink: 0;
-    /* 独占一行强制换行：价格位于标题下方，左对齐 */
-    flex-basis: 100%;
-    margin-left: 0;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-}
-
-/* 海报箭头 - 定位在图片区域垂直居中 */
+/* 娴锋姤绠ご - 瀹氫綅鍦ㄥ浘鐗囧尯鍩熷瀭鐩村眳涓?*/
 .goods-exhibition-wrapper.poster-slider .goods-exhibition-arrow {
     z-index: 20;
     opacity: 0;
@@ -660,7 +603,7 @@
 }
 
 /* ========================================
-   海报圆点指示器 - 在图片底部文字区域内
+   娴锋姤鍦嗙偣鎸囩ず鍣?- 鍦ㄥ浘鐗囧簳閮ㄦ枃瀛楀尯鍩熷唴
    ======================================== */
 .goods-exhibition-dots {
     display: flex;
@@ -697,37 +640,17 @@
 }
 
 /* ========================================
-   手机端海报响应式
+   鎵嬫満绔捣鎶ュ搷搴斿紡
    ======================================== */
 @media (max-width: 480px) {
-    /* 注意：选择器须与桌面规则 .goods-exhibition-content.poster-content 同特异性，
-       此前低特异性导致 padding/gap 被桌面值覆盖，移动端文字块偏高 */
-    .goods-exhibition-wrapper.poster-slider .goods-exhibition-content.poster-content {
-        /* 文字块收紧置于中间靠下区域；底部 26px 预留圆点空间（移动端圆点 bottom:12px、高5px） */
-        padding: 5px 14px 26px;
-        gap: 4px;
-    }
-
-    .goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-title {
-        font-size: 1.1rem !important;
-    }
-
-    .goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-description {
-        display: none;
-    }
-
-    .goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-price {
-        font-size: 1rem !important;
-        /* 抵消基础 .goods-exhibition-price 的 4px 底边距，避免文字块增高 */
-        margin-bottom: 0;
-    }
+    /* 移动端海报文字叠加层样式见下方 v2.1.0 强化区域 */
 
     .goods-exhibition-wrapper.poster-slider .goods-exhibition-arrow {
         display: none !important;
     }
 
     .goods-exhibition-poster-img-wrap {
-        /* 与桌面端严格统一 16:6，不设最低高度 */
+        /* 涓庢闈㈢涓ユ牸缁熶竴 16:6锛屼笉璁炬渶浣庨珮搴?*/
         aspect-ratio: 16 / 6;
     }
 
@@ -751,7 +674,7 @@
 }
 
 /* ========================================
-   移动端滑动提示（Peek 动画）
+   绉诲姩绔粦鍔ㄦ彁绀猴紙Peek 鍔ㄧ敾锛?
    ======================================== */
 @keyframes goods-exhibition-peek {
     0% { transform: translateX(0); }
@@ -764,22 +687,22 @@
 }
 
 /* ========================================
-   夜间模式 / Dark Mode
-   支持 prefers-color-scheme 和常见主题 dark class
+   澶滈棿妯″紡 / Dark Mode
+   鏀寔 prefers-color-scheme 鍜屽父瑙佷富棰?dark class
    ======================================== */
 @media (prefers-color-scheme: dark) {
-    /* 分类标题 */
+    /* 鍒嗙被鏍囬 */
     .goods-exhibition-category-title {
         color: #f0f0f0;
     }
 
-    /* 商品滑动容器 */
+    /* 鍟嗗搧婊戝姩瀹瑰櫒 */
     .goods-exhibition-wrapper {
         background-color: #1c1c1e;
         box-shadow: 0 4px 25px rgba(0, 0, 0, 0.3);
     }
 
-    /* 商品卡片 */
+    /* 鍟嗗搧鍗＄墖 */
     .goods-exhibition-item {
         background: #2c2c2e;
         box-shadow: 0 8px 14px rgba(0, 0, 0, 0.2);
@@ -788,33 +711,33 @@
         box-shadow: 0 14px 20px rgba(0, 0, 0, 0.3);
     }
 
-    /* 标题 */
+    /* 鏍囬 */
     .goods-exhibition-content > h3.goods-exhibition-title {
         color: #f0f0f0 !important;
     }
 
-    /* 描述 */
+    /* 鎻忚堪 */
     .goods-exhibition-description {
         color: #a1a1a6;
     }
 
-    /* 价格 */
+    /* 价格 - 统一红色 */
     .goods-exhibition-price {
-        color: #b0b0b5;
+        color: #fb7185 !important;
     }
 
-    /* 了解更多 */
+    /* 浜嗚В鏇村 */
     .goods-exhibition-more-link {
         color: #64b5f6;
     }
 
-    /* 图片容器背景 */
+    /* 鍥剧墖瀹瑰櫒鑳屾櫙 */
     .goods-exhibition-image-container .goods-exhibition-image {
         background: #3a3a3c;
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
     }
 
-    /* 箭头按钮 */
+    /* 绠ご鎸夐挳 */
     .goods-exhibition-arrow {
         background: rgba(60, 60, 60, 0.8);
         color: #ccc;
@@ -825,27 +748,27 @@
         color: #fff;
     }
 
-    /* 空状态 */
+    /* 绌虹姸鎬?*/
     .goods-exhibition-empty {
         color: #8e8e93;
     }
 
-    /* 海报容器 */
+    /* 娴锋姤瀹瑰櫒 */
     .goods-exhibition-wrapper.poster-slider {
         background: #1c1c1e;
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
     }
 
-    /* 海报箭头 */
+    /* 娴锋姤绠ご */
     .goods-exhibition-wrapper.poster-slider .goods-exhibition-arrow {
         background: rgba(60, 60, 60, 0.85);
         color: #ddd;
     }
 
-    /* 链接色保持不变（已是白色/高亮色） */
+    /* 閾炬帴鑹蹭繚鎸佷笉鍙橈紙宸叉槸鐧借壊/楂樹寒鑹诧級 */
 }
 
-/* 兼容常见主题的 dark mode class */
+/* 鍏煎甯歌涓婚鐨?dark mode class */
 body.dark-mode .goods-exhibition-category-title,
 body[data-theme="dark"] .goods-exhibition-category-title,
 .dark .goods-exhibition-category-title {
@@ -887,7 +810,7 @@ body[data-theme="dark"] .goods-exhibition-description,
 body.dark-mode .goods-exhibition-price,
 body[data-theme="dark"] .goods-exhibition-price,
 .dark .goods-exhibition-price {
-    color: #b0b0b5;
+    color: #fb7185 !important;
 }
 
 body.dark-mode .goods-exhibition-more-link,
@@ -939,8 +862,8 @@ body[data-theme="dark"] .goods-exhibition-empty,
 }
 
 /* ========================================
-   商品详情全貌弹窗 (Quick View Modal)
-   用于完整展现多达 50 字品名与 500 字详情
+   鍟嗗搧璇︽儏鍏ㄨ矊寮圭獥 (Quick View Modal)
+   鐢ㄤ簬瀹屾暣灞曠幇澶氳揪 50 瀛楀搧鍚嶄笌 500 瀛楄鎯?
    ======================================== */
 .goods-quickview-modal {
     position: fixed;
@@ -1087,7 +1010,31 @@ body[data-theme="dark"] .goods-exhibition-empty,
     border: 1px solid #dbeafe;
 }
 
-/* 弹窗商品标题与右侧 NEW 标签容器 */
+.goods-quickview-badge-brand {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+}
+
+.goods-quickview-badge-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #ffedd5;
+}
+
+/* 寮圭獥鍟嗗搧鏍囬涓庡彸渚?NEW 鏍囩瀹瑰櫒 */
 .goods-quickview-title-wrap {
     display: flex;
     align-items: center;
@@ -1182,8 +1129,8 @@ body.goods-modal-open {
 }
 
 /* ========================================
-   移动端与小窗口详情弹窗自适应
-   涵盖桌面缩小窗口、平板竖屏及手机端
+   绉诲姩绔笌灏忕獥鍙ｈ鎯呭脊绐楄嚜閫傚簲
+   娑电洊妗岄潰缂╁皬绐楀彛銆佸钩鏉跨珫灞忓強鎵嬫満绔?
    ======================================== */
 @media (max-width: 768px) {
     .goods-quickview-modal {
@@ -1199,7 +1146,7 @@ body.goods-modal-open {
         box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.35);
     }
 
-    /* 浮动关闭按钮：在图片区域上方悬浮，磨砂半透明背景，高对比度易触控 */
+    /* 娴姩鍏抽棴鎸夐挳锛氬湪鍥剧墖鍖哄煙涓婃柟鎮诞锛岀（鐮傚崐閫忔槑鑳屾櫙锛岄珮瀵规瘮搴︽槗瑙︽帶 */
     .goods-quickview-close {
         top: 12px;
         right: 12px;
@@ -1220,7 +1167,7 @@ body.goods-modal-open {
         transform: scale(1.05);
     }
 
-    /* 弹窗内容整体转为单列垂直流，支持全高度平滑滚动 */
+    /* 寮圭獥鍐呭鏁翠綋杞负鍗曞垪鍨傜洿娴侊紝鏀寔鍏ㄩ珮搴﹀钩婊戞粴鍔?*/
     .goods-quickview-body {
         display: flex;
         flex-direction: column;
@@ -1230,7 +1177,7 @@ body.goods-modal-open {
         -webkit-overflow-scrolling: touch;
     }
 
-    /* 图片容器：包裹图片，高度自适应，绝无高度溢出 */
+    /* 鍥剧墖瀹瑰櫒锛氬寘瑁瑰浘鐗囷紝楂樺害鑷€傚簲锛岀粷鏃犻珮搴︽孩鍑?*/
     .goods-quickview-img-col {
         width: 100%;
         min-height: auto;
@@ -1246,7 +1193,7 @@ body.goods-modal-open {
         background: #f8fafc;
     }
 
-    /* 图片自身约束：严格限制最大高度与自适应宽度，杜绝遮挡下方标题文字 */
+    /* 鍥剧墖鑷韩绾︽潫锛氫弗鏍奸檺鍒舵渶澶ч珮搴︿笌鑷€傚簲瀹藉害锛屾潨缁濋伄鎸′笅鏂规爣棰樻枃瀛?*/
     .goods-quickview-img-col img,
     .goods-quickview-img-rendered {
         max-height: 220px;
@@ -1260,7 +1207,7 @@ body.goods-modal-open {
         display: block;
     }
 
-    /* 文字信息列：内边距紧凑舒适，取消内部多余滚动，由外层整体滚动承载 */
+    /* 鏂囧瓧淇℃伅鍒楋細鍐呰竟璺濈揣鍑戣垝閫傦紝鍙栨秷鍐呴儴澶氫綑婊氬姩锛岀敱澶栧眰鏁翠綋婊氬姩鎵胯浇 */
     .goods-quickview-info-col {
         padding: 20px 22px 24px;
         gap: 10px;
@@ -1271,7 +1218,9 @@ body.goods-modal-open {
         gap: 6px;
     }
 
-    .goods-quickview-badge-cat {
+    .goods-quickview-badge-cat,
+    .goods-quickview-badge-brand,
+    .goods-quickview-badge-tag {
         font-size: 11.5px;
         padding: 2px 8px;
     }
@@ -1305,7 +1254,7 @@ body.goods-modal-open {
         margin-bottom: 6px;
     }
 
-    /* 移动端详情不使用独立内部小滚动条，跟随弹窗单页自然展现 */
+    /* 绉诲姩绔鎯呬笉浣跨敤鐙珛鍐呴儴灏忔粴鍔ㄦ潯锛岃窡闅忓脊绐楀崟椤佃嚜鐒跺睍鐜?*/
     .goods-quickview-desc {
         font-size: 13.5px;
         line-height: 1.65;
@@ -1318,7 +1267,7 @@ body.goods-modal-open {
         padding-top: 12px;
     }
 
-    /* 移动端直达外链按钮：铺满宽度，利于拇指操作 */
+    /* 绉诲姩绔洿杈惧閾炬寜閽細閾烘弧瀹藉害锛屽埄浜庢媷鎸囨搷浣?*/
     .goods-quickview-btn-primary {
         width: 100%;
         padding: 11px 18px;
@@ -1329,7 +1278,7 @@ body.goods-modal-open {
     }
 }
 
-/* 窄屏手机端特化适配 (<= 480px) */
+/* 绐勫睆鎵嬫満绔壒鍖栭€傞厤 (<= 480px) */
 @media (max-width: 480px) {
     .goods-quickview-modal {
         padding: 10px;
@@ -1389,7 +1338,7 @@ body.goods-modal-open {
     }
 }
 
-/* 针对矮屏或横屏手机 (max-height: 520px) 优化，防止内容撑爆视口 */
+/* 閽堝鐭睆鎴栨í灞忔墜鏈?(max-height: 520px) 浼樺寲锛岄槻姝㈠唴瀹规拺鐖嗚鍙?*/
 @media (max-height: 520px) {
     .goods-quickview-modal {
         padding: 8px;
@@ -1413,7 +1362,7 @@ body.goods-modal-open {
     }
 }
 
-/* 暗黑模式适配 */
+/* 鏆楅粦妯″紡閫傞厤 */
 @media (prefers-color-scheme: dark) {
     .goods-quickview-dialog {
         background: #1e293b;
@@ -1498,6 +1447,22 @@ body[data-theme="dark"] .goods-quickview-badge-cat,
     border-color: #1d4ed8;
 }
 
+body.dark-mode .goods-quickview-badge-brand,
+body[data-theme="dark"] .goods-quickview-badge-brand,
+.dark .goods-quickview-badge-brand {
+    background: #1e293b;
+    color: #cbd5e1;
+    border-color: #334155;
+}
+
+body.dark-mode .goods-quickview-badge-tag,
+body[data-theme="dark"] .goods-quickview-badge-tag,
+.dark .goods-quickview-badge-tag {
+    background: #431407;
+    color: #fdba74;
+    border-color: #7c2d12;
+}
+
 body.dark-mode .goods-quickview-price,
 body[data-theme="dark"] .goods-quickview-price,
 .dark .goods-quickview-price {
@@ -1562,3 +1527,489 @@ body[data-theme="dark"] .goods-exhibition-quickview-btn:hover,
     border-color: #3b82f6;
     box-shadow: 0 3px 8px rgba(59, 130, 246, 0.3);
 }
+
+/* ==========================================================================
+   v2.1.0 椤甸潰浼樺寲鍗囩骇锛氶灞忔捣鎶ャ€佸崱鐗囧眰绾с€佷俊浠昏儗涔︺€佸搧鐗屾爮銆佷负浣犳帹鑽?
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. 棣栧睆 Banner 寮哄寲锛堟殫鑹茶川鎰熻儗鏅€佸搧鐗屽窘绔犮€丆TA鎶㈣喘鎸夐挳锛?
+   -------------------------------------------------------------------------- */
+.goods-poster-backdrop-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(15, 23, 42, 0.5) 45%, rgba(0, 0, 0, 0.2) 100%);
+    z-index: 2;
+    pointer-events: none;
+}
+
+.goods-exhibition-wrapper.poster-slider .goods-exhibition-content.poster-content,
+.goods-exhibition-wrapper.poster-slider .poster-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 30px 40px 36px;
+    background: none !important;
+}
+
+.goods-poster-brand-logo-container {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 6px;
+    z-index: 11;
+}
+
+.goods-poster-brand-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.goods-poster-brand-logo:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.goods-poster-brand-logo svg {
+    display: block;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+}
+
+.goods-brand-logo-img {
+    display: block;
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 3px;
+}
+
+.goods-poster-brand-logo.is-text-badge .goods-brand-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 3px 12px;
+    border-radius: 8px;
+    background: rgba(24, 24, 27, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.goods-exhibition-wrapper.poster-slider .poster-title {
+    font-size: 2.2rem !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.02em !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+    margin: 0 !important;
+}
+
+.goods-exhibition-wrapper.poster-slider .poster-desc {
+    font-size: 1.15rem !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    line-height: 1.4 !important;
+    max-width: 540px !important;
+    white-space: normal !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35) !important;
+    margin: 0 0 4px !important;
+}
+
+.goods-poster-action-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 6px;
+}
+
+.goods-poster-price-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #ff5722 0%, #e64a19 100%);
+    color: #ffffff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    box-shadow: 0 4px 14px rgba(244, 67, 54, 0.35);
+}
+
+.goods-poster-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 18px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #0f172a;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    transition: all 0.25s ease;
+}
+
+.goods-poster-cta-btn:hover {
+    background: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.goods-cta-arrow {
+    transition: transform 0.2s ease;
+}
+
+.goods-poster-cta-btn:hover .goods-cta-arrow {
+    transform: translateX(3px);
+}
+
+@media (max-width: 768px) {
+    .goods-exhibition-wrapper.poster-slider .poster-content {
+        padding: 20px 24px 28px !important;
+        gap: 6px !important;
+    }
+    .goods-exhibition-wrapper.poster-slider .poster-title {
+        font-size: 1.5rem !important;
+    }
+    .goods-exhibition-wrapper.poster-slider .poster-desc {
+        font-size: 0.95rem !important;
+    }
+    .goods-poster-brand-logo svg,
+    .goods-brand-logo-img {
+        width: 28px !important;
+        height: 28px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .goods-exhibition-wrapper.poster-slider .poster-content {
+        padding: 12px 14px 24px !important;
+        gap: 4px !important;
+    }
+    .goods-exhibition-wrapper.poster-slider .poster-title {
+        font-size: 1.15rem !important;
+        line-height: 1.25 !important;
+    }
+    .goods-exhibition-wrapper.poster-slider .poster-desc {
+        font-size: 0.85rem !important;
+        line-height: 1.3 !important;
+        margin-bottom: 2px !important;
+    }
+    .goods-poster-brand-logo svg,
+    .goods-brand-logo-img {
+        width: 24px !important;
+        height: 24px !important;
+    }
+    .goods-poster-price-badge {
+        font-size: 0.85rem !important;
+        padding: 4px 10px !important;
+    }
+    .goods-poster-cta-btn {
+        font-size: 0.82rem !important;
+        padding: 4px 12px !important;
+    }
+    .goods-card-header-row .goods-exhibition-title {
+        font-size: 15px !important;
+        line-height: 1.35 !important;
+        min-height: 40px !important;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   2. 商品卡片信息层级与卖点胶囊（NEW徽章、副标、底栏特色标签）
+   -------------------------------------------------------------------------- */
+.goods-card-header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.goods-card-header-row .goods-exhibition-title {
+    margin: 0 !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
+    color: #0f172a !important;
+    flex: 1;
+    min-height: 44px;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.goods-card-header-row .goods-exhibition-new-badge {
+    position: static !important;
+    flex-shrink: 0;
+    margin-top: 1px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #ff6b4a 0%, #ff4500 100%);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    box-shadow: 0 2px 6px rgba(255, 69, 0, 0.25);
+}
+
+/* 鍗＄墖鍥剧墖瀹瑰櫒 */
+.goods-exhibition-image-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: #f8fafc;
+    border-radius: 16px;
+    margin: 8px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.goods-exhibition-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s ease;
+}
+
+.goods-exhibition-item:hover .goods-exhibition-image-container img {
+    transform: scale(1.04);
+}
+
+/* 隐藏海报 Banner CTA 按钮（保持海报高级纯粹大图风格） */
+.goods-poster-cta-btn {
+    display: none !important;
+}
+
+/* 卡片底部浮动特征卖点胶囊容器（直接叠加于图片内左下角，支持最多2个同时并排呈现） */
+.goods-card-badge-container {
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    max-width: calc(100% - 60px);
+    pointer-events: none;
+}
+
+.goods-card-badge-pill.goods-tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 12px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #ea580c;
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    pointer-events: none;
+    transition: transform 0.2s ease;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .goods-card-badge-container {
+        bottom: 22px;
+        left: 22px;
+        gap: 4px;
+        max-width: calc(100% - 44px);
+    }
+    .goods-card-badge-pill.goods-tag-pill {
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+}
+
+/* 鍗囩骇鍗＄墖绔嬩綋鎮仠鏁堟灉 */
+.goods-exhibition-item {
+    border: 1px solid rgba(226, 232, 240, 0.7);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s ease !important;
+}
+
+.goods-exhibition-item:hover {
+    transform: translateY(-8px) !important;
+    border-color: rgba(203, 213, 225, 0.9) !important;
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. 鍒嗙被鍖洪噸鏋勪笌銆屾煡鐪嬫洿澶?>銆?
+   -------------------------------------------------------------------------- */
+.goods-exhibition-main-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 10px;
+}
+
+.goods-category-section {
+    margin-bottom: 40px;
+    scroll-margin-top: 80px;
+    transition: all 0.3s ease;
+}
+
+.goods-category-section.is-highlighted {
+    animation: geHighlightFlash 1.2s ease;
+}
+
+@keyframes geHighlightFlash {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.01); }
+}
+
+.goods-exhibition-category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 32px 10px 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.goods-category-title-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.goods-category-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+    display: inline-block;
+}
+
+.goods-exhibition-category-header .goods-exhibition-category-title {
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 1.45rem !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    border: none !important;
+}
+
+.goods-exhibition-category-header .goods-exhibition-category-title::before,
+.goods-exhibition-category-header .goods-exhibition-category-title::after {
+    display: none !important;
+}
+
+.goods-exhibition-more-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    background: #f8fafc;
+}
+
+.goods-exhibition-more-link:hover {
+    color: #2563eb;
+    background: #eff6ff;
+}
+
+.goods-more-arrow {
+    font-size: 16px;
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+
+.goods-exhibition-more-link:hover .goods-more-arrow {
+    transform: translateX(3px);
+}
+
+/* --------------------------------------------------------------------------
+   4. 暗色模式适配 (Dark Mode)
+   -------------------------------------------------------------------------- */
+body.dark-mode .goods-exhibition-category-header,
+body[data-theme="dark"] .goods-exhibition-category-header,
+.dark .goods-exhibition-category-header {
+    border-bottom-color: #334155;
+}
+
+body.dark-mode .goods-exhibition-category-header .goods-exhibition-category-title,
+body[data-theme="dark"] .goods-exhibition-category-header .goods-exhibition-category-title,
+.dark .goods-exhibition-category-header .goods-exhibition-category-title {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .goods-exhibition-more-link,
+body[data-theme="dark"] .goods-exhibition-more-link,
+.dark .goods-exhibition-more-link {
+    background: #1e293b;
+    color: #94a3b8;
+}
+
+body.dark-mode .goods-exhibition-more-link:hover,
+body[data-theme="dark"] .goods-exhibition-more-link:hover,
+.dark .goods-exhibition-more-link:hover {
+    background: #334155;
+    color: #60a5fa;
+}
+
+body.dark-mode .goods-card-badge-pill.goods-tag-pill,
+body[data-theme="dark"] .goods-card-badge-pill.goods-tag-pill,
+.dark .goods-card-badge-pill.goods-tag-pill {
+    background: rgba(30, 41, 59, 0.92);
+    color: #fb923c;
+    border-color: rgba(251, 146, 60, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .goods-card-header-row .goods-exhibition-title,
+body[data-theme="dark"] .goods-card-header-row .goods-exhibition-title,
+.dark .goods-card-header-row .goods-exhibition-title {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .goods-exhibition-price,
+body[data-theme="dark"] .goods-exhibition-price,
+.dark .goods-exhibition-price {
+    color: #fb7185 !important;
+}
+
+body.dark-mode .goods-exhibition-image-container,
+body[data-theme="dark"] .goods-exhibition-image-container,
+.dark .goods-exhibition-image-container {
+    background: #0f172a;
+}
+
