@@ -30,37 +30,57 @@ function goods_exhibition_render_product_card($product, $is_new = false)
     $item_url = !empty($product['url']) ? esc_url($product['url']) : '';
     $name = esc_html($product['name']);
     $desc = wp_kses_post($product['description']);
-    $price = esc_html($product['price']);
+    $desc_plain = esc_attr(wp_strip_all_tags($product['description']));
+    $price = esc_html(goods_exhibition_format_price_display($product['price']));
     $image_url = esc_url($product['image_url']);
+
+    // 存储完整商品数据供详情弹窗提取（完整 500 字介绍、大图、价格等）
+    $product_json = esc_attr(wp_json_encode(array(
+        'name' => $product['name'],
+        'description' => $product['description'],
+        'price' => goods_exhibition_format_price_display($product['price']),
+        'image_url' => $image_url,
+        'url' => !empty($product['url']) ? $product['url'] : '',
+        'category' => !empty($product['category']) ? $product['category'] : '',
+        'is_new' => $is_new ? 1 : 0,
+    )));
 
     // 构建卡片内部内容
     $inner = '<div class="goods-exhibition-content">';
-    $inner .= '<h3 class="goods-exhibition-title">' . $name;
     if ($is_new) {
-        $inner .= ' <span class="goods-exhibition-new-badge">NEW</span>';
+        $inner .= '<span class="goods-exhibition-new-badge">NEW</span>';
     }
-    $inner .= '</h3>';
-    $inner .= '<div class="goods-exhibition-description">' . $desc . '</div>';
+    // title 属性支持原生悬浮提示：超长品名悬浮即可显示全名（若有外链，标题支持直接点击跳转）
+    if ($item_url) {
+        $inner .= '<h3 class="goods-exhibition-title" title="' . esc_attr($product['name']) . '"><a href="' . $item_url . '" target="_blank" rel="noopener noreferrer" class="goods-exhibition-title-link">' . $name . '</a></h3>';
+    } else {
+        $inner .= '<h3 class="goods-exhibition-title" title="' . esc_attr($product['name']) . '">' . $name . '</h3>';
+    }
+    // 描述同样增加 title 属性支持原生悬浮提示
+    $inner .= '<div class="goods-exhibition-description" title="' . $desc_plain . '">' . $desc . '</div>';
+
+    // 价格与详情按钮同行显示（详情按钮位于右侧，独立按钮彻底杜绝误触打开外链）
+    $inner .= '<div class="goods-exhibition-price-row">';
     if (!empty($price)) {
         $inner .= '<div class="goods-exhibition-price">' . $price . '</div>';
+    } else {
+        $inner .= '<div class="goods-exhibition-price-placeholder"></div>';
     }
-    // 有链接时显示"了解更多"提示
-    if ($item_url) {
-        $inner .= '<span class="goods-exhibition-more-link">了解更多 →</span>';
-    }
+    $inner .= '<button type="button" class="goods-exhibition-quickview-btn" aria-label="查看商品详情" title="查看完整详情" data-img="' . $image_url . '" data-product="' . $product_json . '">详情</button>';
     $inner .= '</div>';
-    $inner .= '<div class="goods-exhibition-image-container">';
+    $inner .= '</div>';
+
+    // 图片容器：点击图片直接唤起详情弹窗（与详情按钮保持一致的交互效果）
+    // 增加 no-lightbox / viewer-ignore 等防主题大图画廊拦截属性，防止主题自带灯箱产生大图或黑框
+    $inner .= '<div class="goods-exhibition-image-container goods-exhibition-image-trigger no-lightbox no-zoom viewer-ignore ignore-lightbox" role="button" tabindex="0" aria-label="' . esc_attr($product['name']) . ' 详情" data-no-viewer="true" data-no-lightbox="true" data-lightbox="false" data-fancybox="none" data-no-zoom="true">';
     $inner .= '<img src="' . $image_url . '" alt="' . esc_attr($product['name']) . '"'
-        . ' width="500" height="500" loading="lazy" class="goods-exhibition-image">';
+        . ' width="500" height="500" loading="lazy" class="goods-exhibition-image no-lightbox no-zoom viewer-ignore ignore-lightbox"'
+        . ' data-no-viewer="true" data-no-lightbox="true" data-lightbox="false" data-fancybox="none" data-no-zoom="true" draggable="false">';
     $inner .= '</div>';
 
-    // 根据是否有链接选择包裹元素
-    if ($item_url) {
-        return '<a href="' . $item_url . '" target="_blank" rel="noopener noreferrer"'
-            . ' class="goods-exhibition-item has-link">' . $inner . '</a>';
-    }
-
-    return '<div class="goods-exhibition-item">' . $inner . '</div>';
+    // 卡片最外层统一为 div 容器（不再用 <a> 包裹整卡，解决点击详情按钮时误打开外部链接的问题）
+    $item_classes = 'goods-exhibition-item' . ($item_url ? ' has-link' : ' is-clickable has-quickview') . ($is_new ? ' is-new' : '');
+    return '<div class="' . $item_classes . '" data-id="' . intval($product['id']) . '" data-img="' . $image_url . '" data-url="' . $item_url . '" data-product="' . $product_json . '">' . $inner . '</div>';
 }
 
 /**
@@ -75,7 +95,7 @@ function goods_exhibition_render_poster_card($poster, $is_first = false)
     $item_url = !empty($poster['url']) ? esc_url($poster['url']) : '';
     $name = esc_html($poster['name']);
     $desc = wp_kses_post($poster['description']);
-    $price = esc_html($poster['price']);
+    $price = esc_html(goods_exhibition_format_price_display($poster['price']));
     $image_url = esc_url($poster['poster_image_url']);
 
     // 首张海报用 eager 加载，后续用 lazy
@@ -206,6 +226,47 @@ function goods_exhibition_shortcode_callback($atts)
         <?php
     }
     $output .= ob_get_clean();
+
+    // 追加商品详情全貌弹窗 (Quick View Modal)，页面单例输出
+    static $modal_rendered = false;
+    if (!$modal_rendered) {
+        $modal_rendered = true;
+        ob_start();
+        ?>
+        <div id="goods-exhibition-quickview-modal" class="goods-quickview-modal" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
+            <div class="goods-quickview-overlay"></div>
+            <div class="goods-quickview-dialog">
+                <button type="button" class="goods-quickview-close" aria-label="关闭窗口">&times;</button>
+                <div class="goods-quickview-body">
+                    <div id="goods-quickview-img-col" class="goods-quickview-img-col no-lightbox no-zoom viewer-ignore ignore-lightbox" data-no-viewer="true" data-no-lightbox="true" data-lightbox="false" data-fancybox="none">
+                        <img id="goods-quickview-img" src="" alt="" style="display:none;" class="goods-quickview-img-rendered no-lightbox no-zoom viewer-ignore ignore-lightbox" data-no-viewer="true" data-no-lightbox="true" data-lightbox="false" data-fancybox="none" draggable="false">
+                    </div>
+                    <div class="goods-quickview-info-col">
+                        <div class="goods-quickview-tags">
+                            <span id="goods-quickview-category" class="goods-quickview-badge-cat" style="display:none;"></span>
+                        </div>
+                        <div class="goods-quickview-title-wrap">
+                            <h3 id="goods-quickview-title" class="goods-quickview-title"></h3>
+                            <span id="goods-quickview-new" class="goods-quickview-badge-new" style="display:none;">NEW</span>
+                        </div>
+                        <div id="goods-quickview-price" class="goods-quickview-price"></div>
+                        <div class="goods-quickview-desc-wrapper">
+                            <h4 class="goods-quickview-desc-heading">商品详情与卖点</h4>
+                            <div id="goods-quickview-desc" class="goods-quickview-desc"></div>
+                        </div>
+                        <div id="goods-quickview-actions" class="goods-quickview-actions" style="display:none;">
+                            <a id="goods-quickview-link" href="#" target="_blank" rel="noopener noreferrer" class="goods-quickview-btn-primary">
+                                <span>访问商品 / 了解更多</span>
+                                <span class="goods-quickview-btn-arrow">&rarr;</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+        $output .= ob_get_clean();
+    }
 
     return $output;
 }

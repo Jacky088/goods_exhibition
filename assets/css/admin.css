@@ -1,769 +1,2032 @@
 /**
- * 好物页面插件管理界面样式
+ * 好物页面管理插件后台样式 (v2.0.0 现代 SaaS 视觉系统)
  */
 
-/* 页面大标题 */
-.goods-exhibition-admin-title {
-    font-size: 28px;
-    font-weight: 600;
-    margin: 20px 0 15px;
-    padding: 0;
-    line-height: 1.3;
-    color: #1d2327;
+/* ==========================================================================
+   1. 基础变量与样式重置 (Design Tokens)
+   ========================================================================== */
+:root {
+    --ge-primary: #2563eb;
+    --ge-primary-hover: #1d4ed8;
+    --ge-primary-light: #eff6ff;
+    --ge-primary-border: #bfdbfe;
+
+    --ge-text-main: #0f172a;
+    --ge-text-muted: #64748b;
+    --ge-text-light: #94a3b8;
+
+    --ge-bg-app: #f8fafc;
+    --ge-bg-card: #ffffff;
+    --ge-bg-subtle: #f8fafc;
+    --ge-bg-hover: #f1f5f9;
+
+    --ge-border: #e2e8f0;
+    --ge-border-light: #f1f5f9;
+
+    --ge-danger: #ef4444;
+    --ge-danger-hover: #dc2626;
+    --ge-danger-light: #fef2f2;
+    --ge-danger-border: #fecaca;
+
+    --ge-warning: #f59e0b;
+    --ge-warning-light: #fffbeb;
+    --ge-warning-border: #fde68a;
+
+    --ge-success: #10b981;
+    --ge-success-light: #ecfdf5;
+    --ge-success-border: #a7f3d0;
+
+    --ge-radius-sm: 6px;
+    --ge-radius-md: 8px;
+    --ge-radius-lg: 12px;
+    --ge-radius-xl: 16px;
+    --ge-radius-full: 9999px;
+
+    --ge-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+    --ge-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+    --ge-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+    --ge-shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+
+    --ge-transition: all 0.15s ease-in-out;
 }
 
-/* 分页卡导航 */
-.goods-exhibition-tabs {
-    margin-bottom: 20px;
+/* 作用域根容器：移除固定 max-width 限制，左侧向前延伸抵消后台原生偏移，使视觉上左右两侧留白严格等宽对称 */
+.goods-exhibition-app {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--ge-text-main);
+    box-sizing: border-box;
+    margin: 12px 20px 36px 0 !important;
+    max-width: none !important;
+    width: auto !important;
 }
 
-/* Tab 内容区域 */
-.goods-exhibition-tab-content {
-    margin-top: 15px;
+.goods-exhibition-app *,
+.goods-exhibition-app *::before,
+.goods-exhibition-app *::after {
+    box-sizing: border-box;
 }
 
-/* ========================================
-   搜索和筛选工具栏
-   ======================================== */
-.goods-exhibition-toolbar {
+/* ==========================================================================
+   2. 头部品牌栏与 Tab 导航
+   ========================================================================== */
+.ge-admin-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-    gap: 10px;
+    padding: 16px 0 12px 0;
+    margin-bottom: 4px;
 }
 
-.goods-exhibition-search-form {
-    display: flex;
+.ge-brand {
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 12px;
 }
 
-.goods-exhibition-search-input {
-    width: 220px;
-    padding: 4px 10px;
+.ge-brand-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #ffffff;
+    border-radius: var(--ge-radius-md);
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    flex-shrink: 0;
 }
 
-.goods-exhibition-filter-select {
-    padding: 4px 8px;
-}
-
-.goods-exhibition-product-count {
-    margin: 0;
-    color: #50575e;
-    font-size: 13px;
-    white-space: nowrap;
-}
-
-/* ========================================
-   产品列表表格 - 紧凑布局
-   ======================================== */
-.goods-exhibition-table {
-    border-collapse: collapse;
-}
-
-.goods-exhibition-table th,
-.goods-exhibition-table td {
-    vertical-align: middle;
-    padding: 8px 6px;
-}
-
-/* 列宽设定 */
-.goods-exhibition-table .check-column {
-    width: 35px;
-    padding: 8px 4px;
-}
-
-.goods-exhibition-table .column-thumb {
-    width: 55px;
-}
-
-.goods-exhibition-table .column-name {
-    width: 15%;
-}
-
-.goods-exhibition-table .column-desc {
-    width: 20%;
-}
-
-.goods-exhibition-table .column-price {
-    width: 12%;
-}
-
-.goods-exhibition-table .column-category {
-    width: 10%;
-}
-
-.goods-exhibition-table .column-tags {
-    width: 10%;
-}
-
-.goods-exhibition-table .column-link {
-    width: 5%;
-    text-align: center;
-}
-
-.goods-exhibition-table .column-date {
-    width: 10%;
-}
-
-.goods-exhibition-table .column-actions {
-    width: 10%;
-    white-space: nowrap;
-}
-
-/* 缩略图 - 紧凑 */
-.goods-exhibition-table .column-thumb img {
-    width: 44px;
-    height: 44px;
-    object-fit: cover;
-    border-radius: 6px;
-    border: 1px solid #e0e0e0;
+.ge-brand-icon svg {
     display: block;
 }
 
-.goods-no-image {
-    display: inline-block;
-    width: 44px;
-    height: 44px;
-    line-height: 44px;
-    text-align: center;
-    background: #f0f0f1;
-    border-radius: 6px;
-    color: #999;
-    font-size: 12px;
+/* 覆盖 WordPress 核心对 .wrap h1 强加的 padding: 9px 0 4px 0 与多余行高 */
+.goods-exhibition-app .ge-admin-header .ge-brand-title,
+.goods-exhibition-app h1.ge-brand-title,
+.ge-brand-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ge-text-main);
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
 }
 
-/* 名称加粗 */
-.goods-exhibition-table .column-name strong {
+.ge-btn-help {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ge-text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: var(--ge-radius-full);
+    background: #ffffff;
+    border: 1px solid var(--ge-border);
+    transition: var(--ge-transition);
+    line-height: 1;
+    cursor: pointer;
+}
+
+.ge-btn-help svg {
+    display: block;
+    flex-shrink: 0;
+}
+
+.ge-btn-help span {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+}
+
+.ge-btn-help:hover {
+    color: var(--ge-primary);
+    border-color: var(--ge-primary-border);
+    background: var(--ge-primary-light);
+}
+
+/* 下划线 Tab 栏 */
+.ge-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--ge-border);
+    margin-bottom: 20px;
+    background: transparent;
+}
+
+.ge-tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ge-text-muted);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: var(--ge-transition);
+}
+
+.ge-tab:hover {
+    color: var(--ge-primary);
+    background: rgba(239, 246, 255, 0.5);
+    border-radius: var(--ge-radius-sm) var(--ge-radius-sm) 0 0;
+}
+
+.ge-tab.is-active {
+    color: var(--ge-primary);
     font-weight: 600;
-    color: #1d2327;
+    border-bottom-color: var(--ge-primary);
+    background: transparent;
 }
 
-/* 描述文字 */
-.goods-exhibition-table .column-desc {
-    color: #646970;
-    font-size: 12px;
+/* Tab 内容容器 */
+.ge-tab-content {
+    animation: geFadeIn 0.2s ease-in-out;
+    width: 100%;
 }
 
-/* 类别徽章 */
-.goods-category-badge {
-    display: inline-block;
-    background: #f0f0f1;
-    color: #50575e;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 12px;
+@keyframes geFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   3. 卡片系统与排版 (Card System)
+   ========================================================================== */
+.ge-card {
+    background: var(--ge-bg-card);
+    border: 1px solid var(--ge-border);
+    border-radius: var(--ge-radius-lg);
+    box-shadow: var(--ge-shadow-sm);
+    padding: 24px;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.ge-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.ge-card-header.ge-between {
+    justify-content: space-between;
+}
+
+.ge-card-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ge-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ge-text-main);
+    margin: 0;
+    padding: 0;
+}
+
+.ge-card-subtitle {
+    font-size: 13px;
+    color: var(--ge-text-muted);
+    margin: 0 0 16px 0;
+    line-height: 1.5;
+}
+
+.ge-card-icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: var(--ge-primary);
+    color: #ffffff;
+    border-radius: 50%;
+}
+
+.ge-card-icon-primary {
+    color: var(--ge-primary);
+    display: flex;
+    align-items: center;
+}
+
+.ge-empty-card,
+.ge-empty-state {
+    background: #ffffff;
+    border: 1px dashed var(--ge-border);
+    border-radius: var(--ge-radius-lg);
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--ge-text-muted);
+    font-size: 14px;
+}
+
+.ge-empty-card a,
+.ge-empty-state a {
+    color: var(--ge-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+/* ==========================================================================
+   4. 按钮系统 (Button Components)
+   ========================================================================== */
+.ge-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--ge-radius-md);
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    line-height: 1.4;
+    transition: var(--ge-transition);
     white-space: nowrap;
 }
 
-/* 标记标签 */
-.goods-tag {
-    display: inline-block;
-    padding: 2px 7px;
-    border-radius: 3px;
-    font-size: 11px;
-    font-weight: 600;
-    margin-right: 3px;
+.ge-btn svg,
+.ge-btn-icon svg {
+    display: block;
+    flex-shrink: 0;
 }
 
-.goods-tag-new {
-    background: #fce4e4;
-    color: #d63638;
+.ge-btn-primary {
+    background: var(--ge-primary);
+    color: #ffffff !important;
+    border-color: var(--ge-primary);
 }
 
-.goods-tag-poster {
-    background: #e7f0fd;
-    color: #2271b1;
+.ge-btn-primary:hover:not(:disabled) {
+    background: var(--ge-primary-hover);
+    border-color: var(--ge-primary-hover);
+    color: #ffffff !important;
 }
 
-.goods-tag-none {
-    color: #c3c4c7;
+.ge-btn-secondary {
+    background: #ffffff;
+    color: var(--ge-text-main) !important;
+    border-color: var(--ge-border);
 }
 
-/* 链接图标 */
-.goods-exhibition-table .column-link a {
-    text-decoration: none;
-    font-size: 16px;
+.ge-btn-secondary:hover:not(:disabled) {
+    background: var(--ge-bg-hover);
+    border-color: #cbd5e1;
+    color: var(--ge-text-main) !important;
 }
 
-/* 操作链接 */
-.goods-action-link {
-    text-decoration: none;
+.ge-btn-tertiary {
+    background: transparent;
+    color: var(--ge-text-muted) !important;
+    border-color: transparent;
+}
+
+.ge-btn-tertiary:hover {
+    color: var(--ge-text-main) !important;
+    background: var(--ge-bg-hover);
+}
+
+.ge-btn-danger {
+    background: var(--ge-danger);
+    color: #ffffff !important;
+    border-color: var(--ge-danger);
+}
+
+.ge-btn-danger:hover:not(:disabled) {
+    background: var(--ge-danger-hover);
+    border-color: var(--ge-danger-hover);
+}
+
+.ge-btn-danger-outline {
+    background: #ffffff;
+    color: var(--ge-danger) !important;
+    border-color: var(--ge-danger-border);
+}
+
+.ge-btn-danger-outline:hover:not(:disabled) {
+    background: var(--ge-danger-light);
+    border-color: var(--ge-danger);
+    color: var(--ge-danger-hover) !important;
+}
+
+.ge-btn-sm {
+    padding: 4px 10px;
     font-size: 12px;
 }
 
-.goods-action-link:hover {
-    text-decoration: underline;
+.ge-btn-lg {
+    padding: 9px 22px;
+    font-size: 14px;
+    font-weight: 600;
 }
 
-.goods-action-delete {
-    color: #b32d2e;
+.ge-btn-block {
+    width: 100%;
 }
 
-.goods-action-delete:hover {
-    color: #a00;
-}
-
-.goods-action-sep {
-    color: #c3c4c7;
-    margin: 0 2px;
-}
-
-/* 批量删除按钮 */
-.goods-exhibition-bulk-delete-btn {
-    color: #b32d2e;
-    border-color: #b32d2e;
-}
-
-.goods-exhibition-bulk-delete-btn:hover:not(:disabled) {
-    background: #b32d2e;
-    color: #fff;
-    border-color: #b32d2e;
-}
-
-.goods-exhibition-bulk-delete-btn:disabled {
+.ge-btn:disabled,
+.ge-btn.is-disabled {
     opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* 图标动作按钮 (编辑铅笔 / 红色垃圾桶) */
+.ge-action-buttons {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ge-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--ge-radius-sm);
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: var(--ge-transition);
+    padding: 0;
+}
+
+.ge-btn-icon.ge-btn-edit {
+    color: var(--ge-primary);
+}
+
+.ge-btn-icon.ge-btn-edit:hover {
+    background: var(--ge-primary-light);
+    border-color: var(--ge-primary-border);
+    color: var(--ge-primary-hover);
+}
+
+.ge-btn-icon.ge-btn-delete {
+    color: var(--ge-danger);
+}
+
+.ge-btn-icon.ge-btn-delete:hover:not(.is-disabled) {
+    background: var(--ge-danger-light);
+    border-color: var(--ge-danger-border);
+    color: var(--ge-danger-hover);
+}
+
+.ge-btn-icon.ge-btn-preview {
+    color: var(--ge-text-muted);
+}
+
+.ge-btn-icon.ge-btn-preview:hover {
+    background: var(--ge-bg-hover);
+    color: var(--ge-primary);
+}
+
+.ge-btn-icon.is-disabled {
+    opacity: 0.35;
     cursor: not-allowed;
 }
 
-.goods-exhibition-selected-count {
-    font-size: 12px;
-    color: #646970;
-    margin-left: 8px;
+/* ==========================================================================
+   5. 表单控件与输入组件 (Form Controls)
+   ========================================================================== */
+.ge-form-group {
+    margin-bottom: 20px;
 }
 
-/* ========================================
-   表单样式
-   ======================================== */
+.ge-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ge-text-main);
+    margin-bottom: 7px;
+}
 
-/* 必填项星号 */
-.form-table th .required {
-    color: #dc3232;
+.ge-required {
+    color: var(--ge-danger);
     font-weight: 700;
     margin-left: 2px;
 }
 
-/* 表单字段样式 */
-.form-table th {
-    width: 150px;
-}
-
-/* 媒体上传按钮 */
-#upload_image_button {
-    margin-right: 10px;
-}
-
-/* 图片预览容器 */
-.product-image-preview {
-    margin-bottom: 15px;
-}
-
-.product-image-preview img {
-    border: 1px solid #ddd;
-    padding: 5px;
-    background: #fff;
-    max-width: 200px;
-    max-height: 200px;
-}
-
-/* 文件上传字段 */
-input[type="file"] {
-    margin: 10px 0;
-}
-
-/* 提示信息 */
-.description {
-    margin: 5px 0;
-    color: #666;
-}
-
-/* 删除按钮 */
-.button-link-delete {
-    color: #a00;
-}
-
-.button-link-delete:hover {
-    color: #dc3232;
-}
-
-/* 图片删除按钮 */
-.goods-image-delete-btn {
-    color: #b32d2e;
-    border-color: #b32d2e;
-    margin-left: 6px;
-}
-
-.goods-image-delete-btn:hover {
-    background: #b32d2e;
-    color: #fff;
-    border-color: #b32d2e;
-}
-
-/* 图片预览区"已移除待保存"提示 */
-.goods-image-removed-hint {
-    color: #b32d2e;
+.ge-help-text {
     font-size: 12px;
-    margin: 5px 0 0;
+    color: var(--ge-text-muted);
+    margin: 6px 0 0 0;
+    line-height: 1.5;
 }
 
-/* 响应式调整 */
-@media screen and (max-width: 782px) {
-    .form-table th {
-        width: auto;
-    }
-
-    .goods-exhibition-admin-title {
-        font-size: 22px;
-    }
-
-    .goods-exhibition-toolbar {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .goods-exhibition-search-input {
-        width: 160px;
-    }
+.ge-help-text a {
+    color: var(--ge-primary);
+    text-decoration: none;
 }
 
-/* ========================================
-   分类管理页面
-   ======================================== */
-.goods-exhibition-categories-layout {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 30px;
-    align-items: start;
+.ge-help-text a:hover {
+    text-decoration: underline;
 }
 
-.goods-exhibition-cat-add {
-    background: #fff;
-    border: 1px solid #c3c4c7;
-    border-radius: 4px;
-    padding: 20px;
-}
-
-.goods-exhibition-cat-add .regular-text {
+.ge-input,
+.ge-select,
+.ge-textarea {
     width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-.goods-exhibition-cat-add h3 {
-    margin-top: 0;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
-}
-
-.goods-cat-field {
-    margin-bottom: 15px;
-}
-
-.goods-cat-field label {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 5px;
-    font-size: 13px;
-}
-
-.goods-cat-field .required {
-    color: #dc3232;
-}
-
-.goods-exhibition-cat-list h3 {
-    margin-top: 0;
-}
-
-/* 编辑弹窗 */
-#goods-cat-edit-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 100000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.goods-cat-modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-}
-
-.goods-cat-modal-content {
-    position: relative;
-    background: #fff;
-    padding: 24px;
-    border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    width: 400px;
-    max-width: 90vw;
-}
-
-.goods-cat-modal-content h3 {
-    margin-top: 0;
-}
-
-/* 响应式 */
-@media screen and (max-width: 782px) {
-    .goods-exhibition-categories-layout {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* ========================================
-   拖动排序
-   ======================================== */
-.goods-drag-handle {
-    cursor: grab;
-    font-size: 16px;
-    color: #999;
-    user-select: none;
-    display: inline-block;
-    padding: 2px 4px;
-}
-
-.goods-drag-handle:hover {
-    color: #333;
-}
-
-.goods-drag-handle:active {
-    cursor: grabbing;
-}
-
-.goods-sort-placeholder {
-    background: #e8f4fd !important;
-    height: 50px;
-    border: 2px dashed #2271b1;
-}
-
-.goods-sort-hint {
-    font-size: 12px;
-    color: #2271b1;
-    font-weight: 500;
-}
-
-.goods-sort-notice {
-    margin: 10px 0;
-}
-
-/* 批量移动 */
-#goods-bulk-move-btn:disabled,
-#goods-bulk-move-category:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* ========================================
-   删除图片二次确认弹窗
-   ======================================== */
-#goods-image-delete-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 100001;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.goods-image-modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-}
-
-.goods-image-modal-content {
-    position: relative;
-    background: #fff;
-    padding: 24px;
-    border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    width: 520px;
-    max-width: 90vw;
-    max-height: 85vh;
-    overflow-y: auto;
-}
-
-.goods-image-modal-content h3 {
-    margin-top: 0;
-}
-
-.goods-image-modal-content p {
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-.goods-image-delete-impact {
-    list-style: disc;
-    margin: 8px 0 8px 22px;
-    font-size: 13px;
-    line-height: 1.7;
-}
-
-.goods-image-delete-warn {
-    color: #b32d2e;
-}
-
-.goods-image-delete-note {
-    background: #fcf9e8;
-    border-left: 4px solid #dba617;
     padding: 8px 12px;
-    border-radius: 2px;
+    font-size: 13px;
+    color: var(--ge-text-main);
+    background: #ffffff;
+    border: 1px solid var(--ge-border);
+    border-radius: var(--ge-radius-md);
+    outline: none;
+    transition: var(--ge-transition);
+    line-height: 1.5;
 }
 
-/* ========================================
-   海报排序
-   ======================================== */
-.goods-poster-sort-hint {
-    margin: 10px 0;
-    color: #2271b1;
+.ge-input:focus,
+.ge-select:focus,
+.ge-textarea:focus {
+    border-color: var(--ge-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-.goods-poster-sort-list {
-    margin: 12px 0 0;
-    padding: 0;
-    list-style: none;
-    max-width: 780px;
+.ge-input-sm,
+.ge-select-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: var(--ge-radius-sm);
 }
 
-.goods-poster-sort-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px 10px 8px;
-    margin-bottom: 8px;
-    background: #fff;
-    border: 1px solid #dcdcde;
-    border-radius: 6px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-    transition: border-color .15s ease, box-shadow .15s ease;
+/* 下拉菜单装饰小箭头 */
+.ge-select-wrapper {
+    position: relative;
+    display: inline-block;
+    width: auto;
 }
 
-.goods-poster-sort-item:hover {
-    border-color: #2271b1;
-    box-shadow: 0 2px 8px rgba(34, 113, 177, 0.12);
+.ge-form-group .ge-select-wrapper {
+    width: 100%;
 }
 
-.goods-poster-sort-item.ui-sortable-helper {
-    border-color: #2271b1;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+.ge-category-select-wrapper {
+    width: 140px;
 }
 
-/* 拖拽手柄：加宽的抓取区域，明确提示"可拖动" */
-.goods-poster-sort-item .goods-drag-handle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    align-self: stretch;
-    width: 28px;
-    padding: 0;
+.ge-select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 32px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 14px;
+    cursor: pointer;
+}
+
+/* 带字数统计的输入容器 */
+.ge-input-with-counter,
+.ge-textarea-with-counter {
+    position: relative;
+    width: 100%;
+}
+
+.ge-input-with-counter .ge-input {
+    padding-right: 56px;
+}
+
+.ge-input-with-counter .ge-counter {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: var(--ge-text-light);
+    pointer-events: none;
+    user-select: none;
+}
+
+.ge-textarea-with-counter .ge-counter {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    font-size: 12px;
+    color: var(--ge-text-light);
+    pointer-events: none;
+    user-select: none;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0 4px;
     border-radius: 4px;
-    font-size: 18px;
-    line-height: 1;
-    color: #8c8f94;
-    cursor: grab;
 }
 
-.goods-poster-sort-item .goods-drag-handle:hover {
-    background: #f0f6fc;
-    color: #2271b1;
+/* 货币符号与输入框组 */
+.ge-input-group {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
 }
 
-.goods-poster-sort-item .goods-drag-handle:active {
-    cursor: grabbing;
+.ge-price-input-group {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
 }
 
-.goods-poster-sort-order {
+.ge-currency-select-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.ge-currency-select {
+    height: 100%;
+    min-height: 40px;
+    padding: 8px 30px 8px 12px;
+    background-color: #f8fafc;
+    border: 1px solid var(--ge-border);
+    border-right: none;
+    border-radius: var(--ge-radius-md) 0 0 var(--ge-radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ge-text-main);
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    transition: var(--ge-transition);
+}
+
+.ge-currency-select:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.ge-currency-select:focus {
+    border-color: var(--ge-primary);
+    background-color: #ffffff;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.ge-input-prefix {
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ge-text-muted);
+    background: #f8fafc;
+    border: 1px solid var(--ge-border);
+    border-right: none;
+    border-radius: var(--ge-radius-md) 0 0 var(--ge-radius-md);
+    user-select: none;
+}
+
+.ge-input-group .ge-input {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    flex: 1;
+}
+
+/* 搜索框包装器 */
+.ge-search-input-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 260px;
+}
+
+.ge-search-input-wrapper .ge-input {
+    padding-left: 34px;
+}
+
+.ge-search-input-wrapper .ge-search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ge-text-light);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+}
+
+.ge-search-sm {
+    width: 200px;
+}
+
+/* 自定义极简 SaaS 复选框 (彻底摆脱浏览器默认生硬控件) */
+.ge-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+    padding: 2px 0;
+}
+
+.ge-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    background-color: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 5px;
+    cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 24px;
-    height: 24px;
-    padding: 0 6px;
-    border-radius: 12px;
-    background: #f0f0f1;
-    color: #50575e;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-/* 缩略图：固定 16:6 比例，清晰可见 */
-.goods-poster-sort-thumb {
+    position: relative;
+    vertical-align: middle;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     flex-shrink: 0;
-    display: block;
-    width: 168px;
-    height: 63px;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    overflow: hidden;
-    background: #f6f7f7;
-    cursor: grab;
+    outline: none;
 }
 
-.goods-poster-sort-thumb img {
+.ge-checkbox:hover {
+    border-color: var(--ge-primary);
+    background-color: #f8fafc;
+}
+
+.ge-checkbox:focus-visible {
+    border-color: var(--ge-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.ge-checkbox:checked {
+    background-color: var(--ge-primary);
+    border-color: var(--ge-primary);
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+}
+
+/* 优雅白色 Checkmark */
+.ge-checkbox:checked::after {
+    content: '';
     display: block;
-    width: 100%;
-    height: 100%;
+    width: 5px;
+    height: 9px;
+    border: solid #ffffff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    position: absolute;
+    top: 2px;
+    left: 5.5px;
+}
+
+/* 半选状态（全选复选框） */
+.ge-checkbox:indeterminate {
+    background-color: var(--ge-primary);
+    border-color: var(--ge-primary);
+}
+
+.ge-checkbox:indeterminate::after {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 2px;
+    background-color: #ffffff;
+    position: absolute;
+    top: 7px;
+    left: 4px;
+    border-radius: 1px;
+}
+
+.ge-checkbox-text {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ge-text-main);
+    line-height: 1.4;
+}
+
+.ge-form-check {
+    padding: 10px 14px;
+    background: #f8fafc;
+    border: 1px solid var(--ge-border);
+    border-radius: var(--ge-radius-md);
+    transition: var(--ge-transition);
+}
+
+.ge-form-check:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.ge-form-check .ge-help-text {
+    margin: 4px 0 0 28px;
+}
+
+/* ==========================================================================
+   6. Dropzone 现代化图片上传交互
+   ========================================================================== */
+.ge-dropzone {
+    border: 2px dashed #93c5fd;
+    background: #f8fafc;
+    border-radius: var(--ge-radius-lg);
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--ge-transition);
+    position: relative;
+}
+
+.ge-dropzone:hover {
+    border-color: var(--ge-primary);
+    background: var(--ge-primary-light);
+}
+
+.ge-dropzone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.ge-dropzone-content.is-hidden {
+    display: none !important;
+}
+
+.ge-dropzone-icon {
+    color: var(--ge-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ge-dropzone-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ge-primary);
+}
+
+/* 预览区域 */
+.ge-dropzone-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.ge-dropzone-preview.is-hidden {
+    display: none !important;
+}
+
+.ge-dropzone-preview img {
+    max-width: 140px;
+    max-height: 140px;
+    width: auto;
+    height: auto;
+    border-radius: var(--ge-radius-md);
+    box-shadow: var(--ge-shadow-sm);
+    border: 1px solid var(--ge-border);
+    object-fit: contain;
+    background: #ffffff;
+}
+
+/* 16:6 宽幅海报预览 */
+.ge-dropzone-preview.ge-preview-wide img {
+    max-width: 260px;
+    max-height: 98px;
+    aspect-ratio: 16 / 6;
     object-fit: cover;
 }
 
-.goods-poster-sort-info {
+.ge-preview-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ==========================================================================
+   7. 表格与列表视图 (Product List View)
+   ========================================================================== */
+.ge-toolbar-card {
+    background: var(--ge-bg-card);
+    border: 1px solid var(--ge-border);
+    border-radius: var(--ge-radius-lg);
+    box-shadow: var(--ge-shadow-sm);
+    padding: 16px 20px;
+    margin-bottom: 16px;
+}
+
+.ge-toolbar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+/* 工具栏第一行单行布局：分类+筛选在左，搜索+统计+分页在右，两者保持在同一行，坚决不分行！ */
+.ge-toolbar-row.ge-toolbar-single-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: nowrap;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.ge-filter-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.ge-filter-left .ge-filter-select {
+    width: 140px;
+}
+
+.ge-filter-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.ge-filter-right .ge-search-input-wrapper {
+    width: 240px;
+}
+
+.ge-total-count {
+    font-size: 13px;
+    color: var(--ge-text-muted);
+    white-space: nowrap;
+}
+
+.ge-mini-pagination {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #ffffff;
+    border: 1px solid var(--ge-border);
+    border-radius: var(--ge-radius-md);
+    padding: 2px 4px;
+}
+
+.ge-page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--ge-radius-sm);
+    text-decoration: none;
+    color: var(--ge-text-main);
+    font-size: 14px;
+    font-weight: 600;
+    transition: var(--ge-transition);
+}
+
+.ge-page-btn:hover:not(.is-disabled) {
+    background: var(--ge-bg-hover);
+    color: var(--ge-primary);
+}
+
+.ge-page-btn.is-disabled {
+    color: var(--ge-text-light);
+    cursor: not-allowed;
+}
+
+.ge-page-indicator {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ge-text-muted);
+    padding: 0 6px;
+}
+
+.ge-toolbar-subrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 10px;
+    border-top: 1px dashed var(--ge-border);
+}
+
+.ge-bulk-actions {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-    flex: 1;
-    min-width: 0;
 }
 
-.goods-poster-sort-info strong {
-    color: #1d2327;
+.ge-bulk-actions .ge-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--ge-text-muted);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--ge-radius-md);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    transition: all var(--ge-transition-fast);
+    cursor: pointer;
+}
+
+.ge-bulk-actions .ge-btn svg {
+    display: block;
+    width: 15px;
+    height: 15px;
+    stroke: currentColor;
+    flex-shrink: 0;
+}
+
+.ge-bulk-actions .ge-btn span {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+}
+
+.ge-bulk-actions .ge-btn:not(:disabled) {
+    color: var(--ge-text-main);
+    border-color: #cbd5e1;
+}
+
+.ge-bulk-actions .ge-btn:not(:disabled):hover {
+    background: var(--ge-bg-hover);
+    border-color: #94a3b8;
+    color: var(--ge-text-main);
+}
+
+.ge-bulk-actions .ge-btn:disabled {
+    color: #94a3b8;
+    background: #ffffff;
+    border-color: #e2e8f0;
+    opacity: 0.65;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.ge-selected-count {
+    font-size: 13px;
+    color: var(--ge-primary);
+    font-weight: 500;
+    margin-left: 6px;
+}
+
+.ge-sort-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--ge-primary);
+    font-weight: 500;
+}
+
+/* 数据表格容器 */
+.ge-table-card {
+    background: var(--ge-bg-card);
+    border: 1px solid var(--ge-border);
+    border-radius: var(--ge-radius-lg);
+    box-shadow: var(--ge-shadow-sm);
+    overflow: hidden;
+}
+
+.ge-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 13px;
+}
+
+.ge-table th {
+    background: #f8fafc;
+    color: var(--ge-text-muted);
+    font-weight: 600;
+    font-size: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--ge-border);
+    white-space: nowrap;
+}
+
+.ge-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--ge-border-light);
+    vertical-align: middle;
+    color: var(--ge-text-main);
+}
+
+.ge-table tbody tr {
+    transition: var(--ge-transition);
+}
+
+.ge-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.ge-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* 表格列宽与特殊样式 */
+.ge-table .col-cb {
+    width: 40px;
+    text-align: center;
+    padding-right: 4px;
+}
+
+.ge-table .col-sort {
+    width: 32px;
+    text-align: center;
+    padding: 0;
+}
+
+.ge-table .col-thumb {
+    width: 64px;
+}
+
+.ge-thumb-img {
+    width: 46px;
+    height: 46px;
+    border-radius: var(--ge-radius-md);
+    object-fit: cover;
+    border: 1px solid var(--ge-border);
+    display: block;
+    background: #ffffff;
+}
+
+.ge-no-thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: var(--ge-radius-md);
+    background: var(--ge-bg-hover);
+    color: var(--ge-text-light);
+    font-size: 11px;
+}
+
+.ge-table .col-name {
+    min-width: 140px;
+    font-weight: 600;
+}
+
+.ge-table .col-desc {
+    color: var(--ge-text-muted);
+    max-width: 240px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.goods-poster-sort-badge {
-    flex-shrink: 0;
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 10px;
-    background: #fcf9e8;
-    color: #996800;
-    font-size: 11px;
+.ge-table .col-price {
+    font-weight: 500;
     white-space: nowrap;
 }
 
-.goods-poster-sort-status {
-    min-height: 20px;
-    margin: 10px 0 0;
-    font-size: 13px;
+.ge-table .col-category {
+    white-space: nowrap;
 }
 
-/* ========================================
-   分类拖拽排序
-   ======================================== */
-.goods-cat-sort-hint {
-    margin: 8px 0 10px;
-    color: #2271b1;
+.ge-table .col-tags {
+    white-space: nowrap;
 }
 
-.goods-cat-sort-handle-cell {
+.ge-table .col-link {
+    text-align: center;
+    width: 50px;
+}
+
+.ge-link-icon {
+    color: var(--ge-text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: var(--ge-transition);
+}
+
+.ge-link-icon:hover {
+    color: var(--ge-primary);
+}
+
+.ge-table .col-date {
+    color: var(--ge-text-muted);
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.ge-table .col-actions {
+    text-align: right;
+    white-space: nowrap;
+    width: 90px;
+}
+
+.ge-text-muted {
+    color: var(--ge-text-light);
+}
+
+/* 胶囊徽章 (Badges & Pills) */
+.ge-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: var(--ge-radius-full);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+    margin-right: 4px;
+}
+
+.ge-badge-cat {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.ge-badge-new {
+    background: var(--ge-danger-light);
+    color: var(--ge-danger);
+}
+
+.ge-badge-poster {
+    background: var(--ge-primary-light);
+    color: var(--ge-primary);
+}
+
+.ge-badge-primary {
+    background: var(--ge-primary-light);
+    color: var(--ge-primary);
+    font-size: 12px;
+}
+
+.ge-badge-warning {
+    background: var(--ge-warning-light);
+    color: var(--ge-warning);
+}
+
+/* 拖拽手柄 */
+.ge-drag-handle {
+    cursor: grab;
+    color: var(--ge-text-light);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 4px;
+    transition: var(--ge-transition);
+}
+
+.ge-drag-handle:hover {
+    color: var(--ge-primary);
+    background: var(--ge-primary-light);
+}
+
+.ge-drag-handle:active {
+    cursor: grabbing;
+}
+
+/* 拖拽占位符 */
+.goods-sort-placeholder {
+    background: #eff6ff !important;
+    border: 2px dashed #3b82f6 !important;
+    height: 48px;
+}
+
+/* ==========================================================================
+   8. 分类管理视图 (Categories View)
+   ========================================================================== */
+.ge-categories-layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+.ge-cat-add-card,
+.ge-cat-list-card {
+    background: var(--ge-bg-card);
+    border: 1px solid var(--ge-border);
+    border-radius: var(--ge-radius-lg);
+    box-shadow: var(--ge-shadow-sm);
+    padding: 24px;
+}
+
+.ge-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    background: var(--ge-bg-hover);
+    color: var(--ge-text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: var(--ge-radius-full);
+}
+
+.ge-cat-table th,
+.ge-cat-table td {
+    padding: 12px 14px;
+}
+
+.ge-cat-table .col-drag {
     width: 40px;
     text-align: center;
 }
 
-.goods-cat-sort-order {
+.ge-cat-table .col-index {
+    width: 50px;
     text-align: center;
-    color: #50575e;
     font-weight: 600;
+    color: var(--ge-text-muted);
 }
 
-/* 表格行拖拽：拖起克隆体与占位块 */
-.goods-exhibition-cat-list tbody tr.ui-sortable-helper {
-    display: table;
+.ge-cat-table .col-cat-count {
+    text-align: center;
+}
+
+.ge-cat-table .col-actions {
+    text-align: right;
+}
+
+/* ==========================================================================
+   9. 海报排序卡片列表视图 (Poster Sort View)
+   ========================================================================== */
+.ge-poster-card {
     width: 100%;
-    background: #fff;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
 }
 
-.goods-exhibition-cat-list tbody tr.ui-sortable-helper td {
-    background: #fff;
+.ge-poster-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 18px;
 }
 
-.goods-exhibition-cat-list tbody tr.goods-sort-placeholder td {
-    background: #e8f4fd !important;
-    border-top: 2px dashed #2271b1;
-    border-bottom: 2px dashed #2271b1;
+.ge-poster-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid var(--ge-border);
+    border-radius: var(--ge-radius-lg);
+    padding: 16px 24px;
+    min-height: 98px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ========================================
-   通用二次确认弹窗（删除产品 / 批量删除 / 删除分类）
-   ======================================== */
-#goods-confirm-modal {
+.ge-poster-item:hover {
+    border-color: var(--ge-primary-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+}
+
+.ge-poster-item.ui-sortable-helper {
+    border-color: var(--ge-primary);
+    box-shadow: var(--ge-shadow-lg);
+    background: #ffffff;
+    transform: scale(1.01);
+}
+
+.ge-poster-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex: 1;
+    min-width: 0;
+}
+
+.ge-poster-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--ge-primary-light);
+    color: var(--ge-primary);
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.ge-poster-thumb {
+    width: 176px;
+    height: 66px;
+    border-radius: var(--ge-radius-md);
+    overflow: hidden;
+    border: 1px solid var(--ge-border);
+    background: var(--ge-bg-subtle);
+    flex-shrink: 0;
+    cursor: grab;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ge-poster-thumb:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: scale(1.02);
+}
+
+.ge-poster-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.ge-poster-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.ge-poster-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ge-text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ge-poster-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.ge-sort-status {
+    min-height: 20px;
+    margin: 12px 0 0 0;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ==========================================================================
+   10. 表单视图布局 (Product Form View)
+   ========================================================================== */
+.ge-form-card {
+    width: 100%;
+}
+
+.ge-form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--ge-border);
+}
+
+.ge-form-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ge-text-main);
+    margin: 0;
+}
+
+.ge-form-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 20px 0;
+}
+
+/* ==========================================================================
+   11. 通知横幅与弹窗 (Alerts & Modals)
+   ========================================================================== */
+/* 现代通知横幅 */
+.ge-alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-radius: var(--ge-radius-md);
+    margin-bottom: 18px;
+    font-size: 13px;
+    line-height: 1.5;
+    animation: geFadeIn 0.2s ease-in-out;
+}
+
+.ge-alert-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ge-alert-success {
+    background: var(--ge-success-light);
+    border: 1px solid var(--ge-success-border);
+    color: #065f46;
+}
+
+.ge-alert-danger {
+    background: var(--ge-danger-light);
+    border: 1px solid var(--ge-danger-border);
+    color: #991b1b;
+}
+
+.ge-alert-warning {
+    background: var(--ge-warning-light);
+    border: 1px solid var(--ge-warning-border);
+    color: #92400e;
+}
+
+.ge-alert-close {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    line-height: 1;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0.6;
+    padding: 0 4px;
+}
+
+.ge-alert-close:hover {
+    opacity: 1;
+}
+
+.ge-alert-link {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    margin-left: 6px;
+}
+
+/* 浅蓝常驻提示横幅 (效果图 2, 3, 4 中的 i 提示) */
+.ge-alert-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--ge-primary-light);
+    border: 1px solid var(--ge-primary-border);
+    color: #1e40af;
+    border-radius: var(--ge-radius-md);
+    padding: 10px 16px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+.ge-cat-alert-banner {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 12px 16px;
+}
+
+.ge-cat-tip-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.ge-cat-tip-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.ge-icon-warn-color {
+    color: var(--ge-danger);
+}
+
+.ge-alert-bottom {
+    margin-top: 24px;
+    margin-bottom: 0;
+}
+
+.ge-alert-banner .ge-icon {
+    flex-shrink: 0;
+}
+
+/* 现代 Modal 弹窗系统 */
+.ge-modal {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 100002;
+    z-index: 100005;
     display: flex;
     align-items: center;
     justify-content: center;
+    animation: geFadeIn 0.15s ease-out;
 }
 
-.goods-confirm-overlay {
+.ge-modal-overlay {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(2px);
 }
 
-.goods-confirm-content {
+.ge-modal-dialog {
     position: relative;
-    background: #fff;
-    padding: 24px;
-    border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    width: 520px;
-    max-width: 90vw;
+    background: #ffffff;
+    border-radius: var(--ge-radius-xl);
+    box-shadow: var(--ge-shadow-modal);
+    width: 480px;
+    max-width: 92vw;
     max-height: 85vh;
     overflow-y: auto;
+    z-index: 1;
+    animation: geModalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.goods-confirm-content h3 {
-    margin-top: 0;
+@keyframes geModalPop {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
 }
 
-.goods-confirm-content p {
+.ge-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--ge-border);
+}
+
+.ge-modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ge-text-main);
+    margin: 0;
+}
+
+.ge-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--ge-text-light);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: var(--ge-transition);
+}
+
+.ge-modal-close:hover {
+    color: var(--ge-text-main);
+    background: var(--ge-bg-hover);
+}
+
+.ge-modal-body {
+    padding: 20px 24px;
     font-size: 13px;
     line-height: 1.6;
+    color: var(--ge-text-muted);
 }
 
-.goods-confirm-impact {
+.ge-modal-body strong {
+    color: var(--ge-text-main);
+}
+
+.ge-modal-body ul {
     list-style: disc;
-    margin: 8px 0 8px 22px;
-    font-size: 13px;
-    line-height: 1.7;
+    margin: 8px 0 12px 20px;
+    padding: 0;
 }
 
-.goods-confirm-note {
-    background: #fcf9e8;
-    border-left: 4px solid #dba617;
-    padding: 8px 12px;
-    border-radius: 2px;
+.ge-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 24px;
+    background: #f8fafc;
+    border-top: 1px solid var(--ge-border);
+    border-radius: 0 0 var(--ge-radius-xl) var(--ge-radius-xl);
 }
 
-/* "立即生效"提示：红色高亮，强调无保存按钮、不可撤销 */
-.goods-confirm-note.is-immediate {
-    background: #fef0f0;
-    border-left-color: #d63638;
+/* 预览图片专用弹窗 (白色背景纯净展示) */
+.ge-modal-preview {
+    width: 720px;
+    max-width: 94vw;
 }
 
-/* ========================================
-   产品表单：还原修改与未保存提示
-   ======================================== */
-.goods-form-reset {
-    margin-left: 6px;
+.ge-preview-body {
+    padding: 24px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0 0 var(--ge-radius-xl) var(--ge-radius-xl);
 }
 
-.goods-unsaved-hint {
-    color: #996800;
+.ge-preview-body img {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: var(--ge-radius-md);
+    object-fit: contain;
+    border: 1px solid var(--ge-border);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* 产品模态窗口及多层级弹窗支持 */
+#goods-product-modal {
+    z-index: 100005;
+}
+
+#goods-image-delete-modal {
+    z-index: 100015;
+}
+
+#goods-confirm-modal {
+    z-index: 100020;
+}
+
+#goods-preview-modal {
+    z-index: 100025;
+}
+
+.ge-modal-product-dialog {
+    width: 780px;
+    max-width: 95vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+}
+
+.ge-modal-product-dialog .ge-modal-header {
+    flex-shrink: 0;
+    padding: 18px 24px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--ge-border);
+}
+
+.ge-modal-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+}
+
+.ge-modal-scrollable {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    min-height: 0;
+}
+
+.ge-modal-product-dialog .ge-modal-footer {
+    flex-shrink: 0;
+    padding: 16px 24px;
+    background: #f8fafc;
+    border-top: 1px solid var(--ge-border);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* 使用帮助与说明专用弹窗 (图3规范适配) */
+#goods-help-modal {
+    z-index: 100030;
+}
+
+.ge-modal-help-dialog {
+    width: 580px;
+    max-width: 92vw;
+    border-radius: var(--ge-radius-xl);
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: var(--ge-shadow-modal);
+}
+
+.ge-help-modal-body {
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.ge-help-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ge-help-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ge-text-main);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.ge-help-section-text {
+    font-size: 13.5px;
+    color: #475569;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.ge-help-code-pill {
+    margin-top: 4px;
+    display: inline-flex;
+    align-self: flex-start;
+}
+
+.ge-help-code-pill code {
+    display: inline-block;
+    padding: 6px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ge-primary);
+    background: #f0f7ff;
+    border: 1px solid #bfdbfe;
+    border-radius: var(--ge-radius-md);
+    letter-spacing: 0.2px;
+}
+
+.ge-help-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 16px 28px 24px 28px;
+    border-top: none;
+    background: #ffffff;
+}
+
+.ge-btn-know {
+    padding: 8px 26px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: var(--ge-radius-md);
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+}
+
+/* 批量移动分类专用弹窗 (参考效果图 2) */
+#goods-bulk-move-modal {
+    z-index: 100030;
+}
+
+.ge-modal-bulk-move-dialog {
+    width: 540px;
+    max-width: 92vw;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.ge-modal-bulk-move-dialog .ge-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.ge-modal-bulk-move-dialog .ge-modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.ge-modal-bulk-move-dialog .ge-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ge-modal-bulk-move-dialog .ge-modal-close:hover {
+    color: #1e293b;
+    background: #f1f5f9;
+}
+
+.ge-bulk-move-body {
+    padding: 20px 24px 8px;
+}
+
+.ge-bulk-move-count-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: #334155;
+    margin-bottom: 20px;
+}
+
+.ge-bulk-move-body .ge-form-group {
+    margin-bottom: 20px;
+}
+
+.ge-bulk-move-body .ge-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.ge-select-full {
+    width: 100% !important;
+}
+
+.ge-bulk-move-body .ge-select {
+    width: 100%;
+    height: 38px;
+    padding: 0 32px 0 12px;
+    font-size: 14px;
+    color: #334155;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color var(--ge-transition-fast), box-shadow var(--ge-transition-fast);
+}
+
+.ge-bulk-move-body .ge-select:focus {
+    border-color: var(--ge-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.ge-bulk-move-body .ge-help-text {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.6;
+    margin-top: 6px;
+    margin-bottom: 0;
+}
+
+.ge-bulk-move-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 8px 24px 24px;
+    border-top: none;
+    background: #ffffff;
+}
+
+.ge-bulk-move-footer .ge-btn-primary {
+    background: #2563eb;
+    border: 1px solid #2563eb;
+    color: #ffffff !important;
+    border-radius: 6px;
+    padding: 8px 22px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.ge-bulk-move-footer .ge-btn-primary:hover:not(:disabled) {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+.ge-bulk-move-footer .ge-btn-secondary {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    color: #374151 !important;
+    border-radius: 6px;
+    padding: 8px 22px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.ge-bulk-move-footer .ge-btn-secondary:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #1e293b !important;
+}
+
+body.ge-modal-open {
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   12. 响应式布局适配 (Responsive Media Queries)
+   ========================================================================== */
+@media screen and (max-width: 960px) {
+    .ge-categories-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .ge-toolbar-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .ge-toolbar-meta {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .ge-search-input-wrapper {
+        width: 100%;
+    }
+
+    .ge-table-card {
+        overflow-x: auto;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .goods-exhibition-app {
+        margin: 10px 10px 20px 0;
+    }
+
+    .ge-admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .ge-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 2px;
+    }
+
+    .ge-card {
+        padding: 16px;
+    }
+
+    .ge-poster-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .ge-poster-right {
+        align-self: flex-end;
+    }
 }

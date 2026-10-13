@@ -84,6 +84,9 @@
     display: flex;
     overflow-x: auto;
     scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scroll-snap-type: x proximity;
     /* 注意：overflow-x 非 visible 时，overflow-y 会被计算为 auto，即垂直方向也裁切。
        卡片阴影向下扩散约 22px（hover 时约 34px），底部内边距必须大于扩散距离，
        否则阴影被 padding box 底边硬切成直角。此处用负外边距抵消增量，页面布局不变。 */
@@ -97,6 +100,9 @@
 
 /* 商品卡片 */
 .goods-exhibition-item {
+    position: relative;
+    overflow: hidden;
+    scroll-snap-align: start;
     flex: 0 0 33.3333%;
     margin: 0 12px;
     min-width: 280px;
@@ -139,12 +145,8 @@
     flex-grow: 1;
 }
 
-/* 标题 - 允许换行，不再截断 */
+/* 标题 - 允许换行，限制2行 + 统一固定2行占位高度保证水平对齐 */
 .goods-exhibition-content > h3.goods-exhibition-title {
-    display: flex !important;
-    align-items: center !important;
-    flex-wrap: wrap !important;
-    gap: 0.4em !important;
     margin: 0 0 6px !important;
     font-weight: 700 !important;
     font-size: 18px !important;
@@ -155,10 +157,30 @@
     word-break: break-word !important;
 }
 
-/* NEW标签 - 珊瑚渐变小胶囊（HTML span 替代旧版内嵌 SVG：继承页面字体渲染，明暗主题下均有良好观感） */
+/* 常规商品卡片标题（排除海报）：固定2行占位高度（18px * 1.3 * 2行 ≈ 48px）及2行截断 */
+.goods-exhibition-item:not(.poster-item) .goods-exhibition-content > h3.goods-exhibition-title {
+    min-height: 48px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* 带 NEW 标签时，标题右侧预留避让间距，防止长品名碰撞右上角标签 */
+.goods-exhibition-item.is-new .goods-exhibition-content > h3.goods-exhibition-title {
+    padding-right: 56px !important;
+}
+
+/* NEW标签 - 悬浮在卡片右上角的独立角标（HTML span 替代旧版内嵌 SVG：继承页面字体渲染，明暗主题下均有良好观感） */
 .goods-exhibition-new-badge {
+    position: absolute !important;
+    top: 20px !important;
+    right: 20px !important;
+    z-index: 2 !important;
     display: inline-flex !important;
     align-items: center !important;
+    justify-content: center !important;
     height: 20px !important;
     padding: 0 9px !important;
     border-radius: 999px !important;
@@ -167,17 +189,18 @@
     font-size: 11px !important;
     font-weight: 700 !important;
     line-height: 1 !important;
-    letter-spacing: 0.1em !important;
+    letter-spacing: 0.08em !important;
     flex-shrink: 0 !important;
     user-select: none !important;
     pointer-events: none !important;
     box-shadow: 0 2px 6px rgba(255, 77, 48, 0.35) !important;
 }
 
-/* 商品描述 - 限制2行 + 省略号 */
+/* 商品描述 - 限制2行 + 统一固定2行占位高度保证水平对齐 */
 .goods-exhibition-description {
     font-size: 14px;
     line-height: 1.5;
+    min-height: 42px; /* 14px * 1.5 * 2行 = 42px，统一2行占位高度 */
     color: #444;
     margin-bottom: 8px;
     display: -webkit-box;
@@ -187,35 +210,93 @@
     text-overflow: ellipsis;
 }
 
+/* 价格与详情按钮同行布局 */
+.goods-exhibition-price-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
+    margin-bottom: 2px;
+    gap: 10px;
+    min-height: 32px;
+}
+
 /* 价格 */
 .goods-exhibition-price {
     font-weight: 600;
     font-size: 16px;
     color: #666;
-    margin-bottom: 4px;
+    margin-bottom: 0;
+    line-height: 1.4;
+    white-space: nowrap;
 }
 
-/* "了解更多"链接提示 */
-.goods-exhibition-more-link {
-    display: block;
-    font-size: 13px;
-    color: #0071e3;
-    margin-top: 6px;
+.goods-exhibition-price-placeholder {
+    flex: 1;
+}
+
+/* 详情药丸按钮（与价格同行居右、尺寸适中、微动效） */
+.goods-exhibition-quickview-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    line-height: 1.4;
+    flex-shrink: 0;
+    margin-left: auto;
+    user-select: none;
     text-decoration: none;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
+    outline: none;
+    box-sizing: border-box;
 }
-.goods-exhibition-item:hover .goods-exhibition-more-link {
-    opacity: 1;
+.goods-exhibition-quickview-btn:hover {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(37, 99, 235, 0.25);
+}
+.goods-exhibition-quickview-btn:active {
+    transform: translateY(0);
 }
 
-/* 图片容器 - 固定宽高比，统一卡片高度 */
+/* 标题外链与图片外链支持 */
+.goods-exhibition-title-link {
+    color: inherit !important;
+    text-decoration: none !important;
+}
+.goods-exhibition-title-link:hover {
+    color: #0071e3 !important;
+}
+
+/* 图片容器 - 固定宽高比，统一卡片高度，点击唤起详情弹窗 */
 .goods-exhibition-image-container {
     padding: 0 20px 20px 20px;
     flex-shrink: 0;
     position: relative;
     overflow: hidden; /* 防止图片占位背景出现直角 */
     border-radius: 0 0 24px 24px; /* 与卡片底部圆角保持一致 */
+    cursor: pointer;
+    outline: none !important;
+    border: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    user-select: none;
+}
+
+.goods-exhibition-image-container:focus,
+.goods-exhibition-image-container:focus-visible,
+.goods-exhibition-image-container:active {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 .goods-exhibition-image-container .goods-exhibition-image {
@@ -225,7 +306,24 @@
     border-radius: 24px;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
     user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none !important; /* 核心：让点击事件直接由容器接管，彻底杜绝主题或灯箱插件监听 img 点击并弹出大图画廊 */
+    outline: none !important;
+    border: none !important;
     background: #f5f5f7;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+.goods-exhibition-image:focus,
+.goods-exhibition-image:focus-visible,
+.goods-exhibition-image:active {
+    outline: none !important;
+    border: none !important;
+}
+
+.goods-exhibition-image-container:hover .goods-exhibition-image {
+    transform: scale(1.02);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.14);
 }
 
 /* ========================================
@@ -284,29 +382,91 @@
     color: #86868b;
 }
 
-/* 平板端: 显示2个商品 */
-@media (max-width: 1024px) and (min-width: 481px) {
+/* 平板端: 适度缩放并平滑滑动 */
+@media (max-width: 1024px) and (min-width: 769px) {
     .goods-exhibition-item {
-        flex: 0 0 50%;
-        min-width: auto;
-        max-width: none;
-        margin: 0 12px;
+        flex: 0 0 calc(50% - 20px);
+        min-width: 260px;
+        max-width: 380px;
+        margin: 0 10px;
     }
 }
 
-/* 手机端: 显示1.5个商品 */
-@media (max-width: 480px) {
+/* 平板竖屏/桌面小窗口: 突出当前卡片并露出一角提示可滑动 */
+@media (max-width: 768px) and (min-width: 481px) {
     .goods-exhibition-wrapper {
-        padding: 20px 10px;
+        padding: 24px 16px;
     }
     .goods-exhibition-item {
-        flex: 0 0 72%;
-        min-width: auto;
-        max-width: none;
-        margin: 0 8px 0 0;
+        flex: 0 0 calc(58% - 16px);
+        min-width: 240px;
+        max-width: 330px;
+        margin: 0 8px;
     }
     .goods-exhibition-arrow {
         display: none !important;
+    }
+}
+
+/* 手机端: 宽度自适应并优化紧凑内边距 */
+@media (max-width: 480px) {
+    .goods-exhibition-wrapper {
+        padding: 20px 10px;
+        border-radius: 18px !important;
+    }
+    .goods-exhibition-item {
+        flex: 0 0 76%;
+        min-width: 220px;
+        max-width: 290px;
+        margin: 0 10px 0 0;
+        border-radius: 20px;
+    }
+    .goods-exhibition-arrow {
+        display: none !important;
+    }
+    .goods-exhibition-content {
+        padding: 16px 14px 6px 14px;
+    }
+    .goods-exhibition-item:not(.poster-item) .goods-exhibition-content > h3.goods-exhibition-title {
+        font-size: 16px !important;
+        line-height: 1.35 !important;
+        min-height: 44px !important;
+        margin-bottom: 4px !important;
+    }
+    .goods-exhibition-item.is-new .goods-exhibition-content > h3.goods-exhibition-title {
+        padding-right: 48px !important;
+    }
+    .goods-exhibition-new-badge {
+        top: 14px !important;
+        right: 14px !important;
+        height: 18px !important;
+        padding: 0 7px !important;
+        font-size: 10px !important;
+    }
+    .goods-exhibition-description {
+        font-size: 13px;
+        line-height: 1.45;
+        min-height: 38px;
+        margin-bottom: 6px;
+    }
+    .goods-exhibition-price-row {
+        min-height: 28px;
+        gap: 8px;
+        margin-top: 4px;
+    }
+    .goods-exhibition-price {
+        font-size: 15px;
+    }
+    .goods-exhibition-quickview-btn {
+        padding: 4px 12px;
+        font-size: 12px;
+    }
+    .goods-exhibition-image-container {
+        padding: 0 14px 14px 14px;
+        border-radius: 0 0 20px 20px;
+    }
+    .goods-exhibition-image-container .goods-exhibition-image {
+        border-radius: 18px;
     }
 }
 
@@ -439,6 +599,7 @@
     -webkit-line-clamp: unset;
     display: block;
     text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    min-height: 0;
 }
 
 .goods-exhibition-wrapper.poster-slider .poster-content .goods-exhibition-price {
@@ -742,4 +903,626 @@ body.dark-mode .goods-exhibition-empty,
 body[data-theme="dark"] .goods-exhibition-empty,
 .dark .goods-exhibition-empty {
     color: #8e8e93;
+}
+
+/* ========================================
+   商品详情全貌弹窗 (Quick View Modal)
+   用于完整展现多达 50 字品名与 500 字详情
+   ======================================== */
+.goods-quickview-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.goods-quickview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.goods-quickview-dialog {
+    position: relative;
+    z-index: 1;
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-width: 760px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: geQuickviewFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes geQuickviewFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.goods-quickview-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+    background: #f1f5f9;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 1;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.goods-quickview-close:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.goods-quickview-body {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.goods-quickview-img-col {
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    min-height: 280px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.goods-quickview-img-col img,
+.goods-quickview-img-rendered {
+    display: block;
+    max-width: 100%;
+    max-height: 340px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    pointer-events: none !important;
+    outline: none !important;
+    border: none !important;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+.goods-quickview-info-col {
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+}
+
+.goods-quickview-tags {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.goods-quickview-badge-cat {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #dbeafe;
+}
+
+/* 弹窗商品标题与右侧 NEW 标签容器 */
+.goods-quickview-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.goods-quickview-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.35;
+    margin: 0;
+    word-break: break-word;
+}
+
+.goods-quickview-badge-new {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ff6b4a, #ff3b30);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(255, 77, 48, 0.3);
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+.goods-quickview-price {
+    font-size: 20px;
+    font-weight: 700;
+    color: #e11d48;
+    margin-top: 2px;
+}
+
+.goods-quickview-desc-wrapper {
+    margin-top: 6px;
+    padding-top: 14px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.goods-quickview-desc-heading {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 8px 0;
+}
+
+.goods-quickview-desc {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #334155;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.goods-quickview-actions {
+    margin-top: auto;
+    padding-top: 16px;
+}
+
+.goods-quickview-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: #2563eb;
+    color: #ffffff !important;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 12px;
+    text-decoration: none !important;
+    transition: background 0.2s ease, transform 0.15s ease;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.goods-quickview-btn-primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+body.goods-modal-open {
+    overflow: hidden;
+    touch-action: none;
+}
+body.goods-modal-open .goods-quickview-dialog {
+    touch-action: pan-y;
+}
+
+/* ========================================
+   移动端与小窗口详情弹窗自适应
+   涵盖桌面缩小窗口、平板竖屏及手机端
+   ======================================== */
+@media (max-width: 768px) {
+    .goods-quickview-modal {
+        padding: 16px;
+        align-items: center;
+    }
+
+    .goods-quickview-dialog {
+        max-width: 500px;
+        width: 100%;
+        max-height: 88vh;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.35);
+    }
+
+    /* 浮动关闭按钮：在图片区域上方悬浮，磨砂半透明背景，高对比度易触控 */
+    .goods-quickview-close {
+        top: 12px;
+        right: 12px;
+        width: 36px;
+        height: 36px;
+        font-size: 24px;
+        z-index: 30;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        color: #1e293b;
+    }
+    .goods-quickview-close:hover,
+    .goods-quickview-close:active {
+        background: #ffffff;
+        color: #000000;
+        transform: scale(1.05);
+    }
+
+    /* 弹窗内容整体转为单列垂直流，支持全高度平滑滚动 */
+    .goods-quickview-body {
+        display: flex;
+        flex-direction: column;
+        grid-template-columns: 1fr;
+        max-height: 88vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* 图片容器：包裹图片，高度自适应，绝无高度溢出 */
+    .goods-quickview-img-col {
+        width: 100%;
+        min-height: auto;
+        max-height: none;
+        padding: 24px 20px 18px;
+        box-sizing: border-box;
+        overflow: hidden;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 20px 20px 0 0;
+        background: #f8fafc;
+    }
+
+    /* 图片自身约束：严格限制最大高度与自适应宽度，杜绝遮挡下方标题文字 */
+    .goods-quickview-img-col img,
+    .goods-quickview-img-rendered {
+        max-height: 220px;
+        max-width: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        border-radius: 12px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+        margin: 0 auto;
+        display: block;
+    }
+
+    /* 文字信息列：内边距紧凑舒适，取消内部多余滚动，由外层整体滚动承载 */
+    .goods-quickview-info-col {
+        padding: 20px 22px 24px;
+        gap: 10px;
+        overflow-y: visible;
+    }
+
+    .goods-quickview-tags {
+        gap: 6px;
+    }
+
+    .goods-quickview-badge-cat {
+        font-size: 11.5px;
+        padding: 2px 8px;
+    }
+
+    .goods-quickview-title-wrap {
+        gap: 8px;
+    }
+
+    .goods-quickview-title {
+        font-size: 19px;
+        line-height: 1.35;
+    }
+
+    .goods-quickview-badge-new {
+        font-size: 10px;
+        padding: 2px 7px;
+    }
+
+    .goods-quickview-price {
+        font-size: 18px;
+        margin-top: 0;
+    }
+
+    .goods-quickview-desc-wrapper {
+        margin-top: 4px;
+        padding-top: 12px;
+    }
+
+    .goods-quickview-desc-heading {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    /* 移动端详情不使用独立内部小滚动条，跟随弹窗单页自然展现 */
+    .goods-quickview-desc {
+        font-size: 13.5px;
+        line-height: 1.65;
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    .goods-quickview-actions {
+        margin-top: 8px;
+        padding-top: 12px;
+    }
+
+    /* 移动端直达外链按钮：铺满宽度，利于拇指操作 */
+    .goods-quickview-btn-primary {
+        width: 100%;
+        padding: 11px 18px;
+        font-size: 14px;
+        box-sizing: border-box;
+        text-align: center;
+        justify-content: center;
+    }
+}
+
+/* 窄屏手机端特化适配 (<= 480px) */
+@media (max-width: 480px) {
+    .goods-quickview-modal {
+        padding: 10px;
+    }
+
+    .goods-quickview-dialog {
+        max-width: 100%;
+        max-height: 92vh;
+        border-radius: 18px;
+    }
+
+    .goods-quickview-body {
+        max-height: 92vh;
+    }
+
+    .goods-quickview-close {
+        top: 10px;
+        right: 10px;
+        width: 32px;
+        height: 32px;
+        font-size: 20px;
+    }
+
+    .goods-quickview-img-col {
+        padding: 18px 14px 12px;
+        border-radius: 18px 18px 0 0;
+    }
+
+    .goods-quickview-img-col img,
+    .goods-quickview-img-rendered {
+        max-height: 170px;
+        border-radius: 10px;
+    }
+
+    .goods-quickview-info-col {
+        padding: 15px 16px 20px;
+        gap: 8px;
+    }
+
+    .goods-quickview-title {
+        font-size: 17px;
+    }
+
+    .goods-quickview-price {
+        font-size: 17px;
+    }
+
+    .goods-quickview-desc {
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .goods-quickview-btn-primary {
+        padding: 10px 16px;
+        font-size: 13.5px;
+        border-radius: 10px;
+    }
+}
+
+/* 针对矮屏或横屏手机 (max-height: 520px) 优化，防止内容撑爆视口 */
+@media (max-height: 520px) {
+    .goods-quickview-modal {
+        padding: 8px;
+    }
+    .goods-quickview-dialog {
+        max-height: 96vh;
+    }
+    .goods-quickview-body {
+        max-height: 96vh;
+    }
+    .goods-quickview-img-col {
+        padding: 12px 14px 8px;
+    }
+    .goods-quickview-img-col img,
+    .goods-quickview-img-rendered {
+        max-height: 120px;
+    }
+    .goods-quickview-info-col {
+        padding: 12px 16px 16px;
+        gap: 6px;
+    }
+}
+
+/* 暗黑模式适配 */
+@media (prefers-color-scheme: dark) {
+    .goods-quickview-dialog {
+        background: #1e293b;
+        color: #f1f5f9;
+    }
+    .goods-quickview-img-col {
+        background: #0f172a;
+    }
+    .goods-quickview-title {
+        color: #f8fafc;
+    }
+    .goods-quickview-badge-cat {
+        background: #1e3a8a;
+        color: #93c5fd;
+        border-color: #1d4ed8;
+    }
+    .goods-quickview-price {
+        color: #fb7185;
+    }
+    .goods-quickview-desc {
+        color: #cbd5e1;
+    }
+    .goods-quickview-desc-wrapper {
+        border-color: #334155;
+    }
+    .goods-quickview-desc-heading {
+        color: #94a3b8;
+    }
+    .goods-quickview-close {
+        background: #334155;
+        color: #cbd5e1;
+    }
+    .goods-quickview-close:hover {
+        background: #475569;
+        color: #f8fafc;
+    }
+    .goods-exhibition-quickview-btn {
+        background: #334155;
+        color: #cbd5e1;
+        border-color: #475569;
+    }
+    .goods-exhibition-quickview-btn:hover {
+        background: #3b82f6;
+        color: #ffffff;
+        border-color: #3b82f6;
+        box-shadow: 0 3px 8px rgba(59, 130, 246, 0.3);
+    }
+}
+
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
+    .goods-quickview-close {
+        background: rgba(30, 41, 59, 0.9);
+        color: #f1f5f9;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+}
+
+body.dark-mode .goods-quickview-dialog,
+body[data-theme="dark"] .goods-quickview-dialog,
+.dark .goods-quickview-dialog {
+    background: #1e293b;
+    color: #f1f5f9;
+}
+
+body.dark-mode .goods-quickview-img-col,
+body[data-theme="dark"] .goods-quickview-img-col,
+.dark .goods-quickview-img-col {
+    background: #0f172a;
+}
+
+body.dark-mode .goods-quickview-title,
+body[data-theme="dark"] .goods-quickview-title,
+.dark .goods-quickview-title {
+    color: #f8fafc;
+}
+
+body.dark-mode .goods-quickview-badge-cat,
+body[data-theme="dark"] .goods-quickview-badge-cat,
+.dark .goods-quickview-badge-cat {
+    background: #1e3a8a;
+    color: #93c5fd;
+    border-color: #1d4ed8;
+}
+
+body.dark-mode .goods-quickview-price,
+body[data-theme="dark"] .goods-quickview-price,
+.dark .goods-quickview-price {
+    color: #fb7185;
+}
+
+body.dark-mode .goods-quickview-desc,
+body[data-theme="dark"] .goods-quickview-desc,
+.dark .goods-quickview-desc {
+    color: #cbd5e1;
+}
+
+body.dark-mode .goods-quickview-desc-wrapper,
+body[data-theme="dark"] .goods-quickview-desc-wrapper,
+.dark .goods-quickview-desc-wrapper {
+    border-color: #334155;
+}
+
+body.dark-mode .goods-quickview-desc-heading,
+body[data-theme="dark"] .goods-quickview-desc-heading,
+.dark .goods-quickview-desc-heading {
+    color: #94a3b8;
+}
+
+body.dark-mode .goods-quickview-close,
+body[data-theme="dark"] .goods-quickview-close,
+.dark .goods-quickview-close {
+    background: #334155;
+    color: #cbd5e1;
+}
+
+body.dark-mode .goods-quickview-close:hover,
+body[data-theme="dark"] .goods-quickview-close:hover,
+.dark .goods-quickview-close:hover {
+    background: #475569;
+    color: #f8fafc;
+}
+
+@media (max-width: 768px) {
+    body.dark-mode .goods-quickview-close,
+    body[data-theme="dark"] .goods-quickview-close,
+    .dark .goods-quickview-close {
+        background: rgba(30, 41, 59, 0.9);
+        color: #f1f5f9;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+}
+
+body.dark-mode .goods-exhibition-quickview-btn,
+body[data-theme="dark"] .goods-exhibition-quickview-btn,
+.dark .goods-exhibition-quickview-btn {
+    background: #334155;
+    color: #cbd5e1;
+    border-color: #475569;
+}
+
+body.dark-mode .goods-exhibition-quickview-btn:hover,
+body[data-theme="dark"] .goods-exhibition-quickview-btn:hover,
+.dark .goods-exhibition-quickview-btn:hover {
+    background: #3b82f6;
+    color: #ffffff;
+    border-color: #3b82f6;
+    box-shadow: 0 3px 8px rgba(59, 130, 246, 0.3);
 }

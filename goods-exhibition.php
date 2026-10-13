@@ -3,7 +3,7 @@
  * Plugin Name: 好物页面插件
  * Plugin URI: https://github.com/Jacky088/goods_exhibition
  * Description: 一个展示好物商品的WordPress插件（已通过安全审查和优化）
- * Version: 1.6.2
+ * Version: 2.0.0
  * Author: 木木
  * Author URI: https://github.com/Jacky088/goods_exhibition
  * License: GPL v2 or later
@@ -19,7 +19,7 @@ if (!defined('WPINC')) {
 }
 
 // 定义插件版本
-define('GOODS_EXHIBITION_VERSION', '1.6.2');
+define('GOODS_EXHIBITION_VERSION', '2.0.0');
 // 定义插件路径
 define('GOODS_EXHIBITION_PATH', plugin_dir_path(__FILE__));
 // 定义插件URL
@@ -64,9 +64,38 @@ function goods_exhibition_activate()
 {
     goods_exhibition_setup_database();
     goods_exhibition_migrate_legacy_uploads();
+    goods_exhibition_migrate_currency_symbols();
     goods_exhibition_ensure_upload_protection();
     update_option('goods_exhibition_version', GOODS_EXHIBITION_VERSION);
 }
+
+/**
+ * 自动迁移旧版商品价格中的货币代号
+ *
+ * 将数据库中历史遗留的 "RMB xxx" 或 "CNY xxx" 统一无缝批量转换为 "¥xxx"，
+ * 确保已存在的历史商品价格与 v2.0.0 后台货币符号选择系统及前台卡片完全联动。
+ */
+function goods_exhibition_migrate_currency_symbols()
+{
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'goods_exhibition';
+
+    // 检查数据表是否存在
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
+    if ($table_exists !== $table_name) {
+        return;
+    }
+
+    $needs_migration = (int) $wpdb->get_var("SELECT COUNT(*) FROM `{$table_name}` WHERE price LIKE 'RMB%' OR price LIKE 'CNY%'");
+    if ($needs_migration > 0) {
+        $wpdb->query("UPDATE `{$table_name}` SET price = REPLACE(price, 'RMB ', '¥') WHERE price LIKE 'RMB %'");
+        $wpdb->query("UPDATE `{$table_name}` SET price = REPLACE(price, 'RMB', '¥') WHERE price LIKE 'RMB%'");
+        $wpdb->query("UPDATE `{$table_name}` SET price = REPLACE(price, 'CNY ', '¥') WHERE price LIKE 'CNY %'");
+        $wpdb->query("UPDATE `{$table_name}` SET price = REPLACE(price, 'CNY', '¥') WHERE price LIKE 'CNY%'");
+        goods_exhibition_flush_cache();
+    }
+}
+add_action('admin_init', 'goods_exhibition_migrate_currency_symbols');
 
 /**
  * 升级例程：插件通过后台"自动更新"时不经过停用/激活流程，
@@ -82,6 +111,7 @@ function goods_exhibition_maybe_upgrade()
 
     goods_exhibition_setup_database();
     goods_exhibition_migrate_legacy_uploads();
+    goods_exhibition_migrate_currency_symbols();
     goods_exhibition_ensure_upload_protection();
     update_option('goods_exhibition_version', GOODS_EXHIBITION_VERSION);
 }
@@ -398,7 +428,8 @@ function goods_exhibition_ajax_bulk_move()
     }
 
     $product_ids = isset($_POST['product_ids']) ? $_POST['product_ids'] : array();
-    $target_category = isset($_POST['target_category']) ? sanitize_text_field($_POST['target_category']) : '';
+    $target_category = isset($_POST['target_category']) ? sanitize_text_field(wp_unslash($_POST['target_category'])) : '';
+    $source_category = isset($_POST['source_category']) ? sanitize_text_field(wp_unslash($_POST['source_category'])) : 'all';
 
     if (empty($product_ids) || !is_array($product_ids) || empty($target_category)) {
         wp_send_json_error('请选择产品和目标分类');
@@ -425,12 +456,22 @@ function goods_exhibition_ajax_bulk_move()
     // 单条 SQL 批量更新分类，代替逐行 UPDATE 的 N 次数据库往返
     // moved 为实际受影响行数：已在目标分类的产品不会重复计数（提示数量比旧版更准确）
     $ids_sql = implode(',', $product_ids); // 均已 intval，安全可控
-    $moved = $wpdb->query(
-        $wpdb->prepare(
-            "UPDATE `{$table_name}` SET category = %s WHERE id IN ({$ids_sql})",
-            $target_category
-        )
-    );
+    if (!empty($source_category) && $source_category !== 'all') {
+        $moved = $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE `{$table_name}` SET category = %s WHERE id IN ({$ids_sql}) AND category = %s",
+                $target_category,
+                $source_category
+            )
+        );
+    } else {
+        $moved = $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE `{$table_name}` SET category = %s WHERE id IN ({$ids_sql})",
+                $target_category
+            )
+        );
+    }
     if ($moved === false) {
         $moved = 0;
     }

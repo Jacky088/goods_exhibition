@@ -253,3 +253,22 @@ function goods_exhibition_code_stamp()
     return filemtime(__FILE__);
 }
 
+/**
+ * 格式化产品价格展示（规范化货币符号）
+ *
+ * 将历史数据或手动输入中存在的 RMB、CNY 文本代号统一联动转换为规范货币符号 ¥，
+ * 确保后台选择的货币符号与前台展示严格联动一致。
+ *
+ * @param string $price 原始价格字符串
+ * @return string 规范化后的展示价格
+ */
+function goods_exhibition_format_price_display($price)
+{
+    if (empty($price)) {
+        return '';
+    }
+    // 将历史或录入的 RMB、CNY 统一替换为对应的规范货币符号 ¥
+    return preg_replace('/^(RMB|CNY)\s*/iu', '¥', trim($price));
+}
+
+
