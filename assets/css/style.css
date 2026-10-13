@@ -118,9 +118,27 @@
     text-align: left;
     text-decoration: none;
     color: inherit;
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
 }
 
-/* 有链接的卡片 */
+/* 常规商品卡片（点击卡片任何位置均唤起详情弹窗） */
+.goods-exhibition-item.is-clickable,
+.goods-exhibition-item:not(.poster-item) {
+    cursor: pointer;
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+.goods-exhibition-item:focus,
+.goods-exhibition-item:focus-visible,
+.goods-exhibition-item:active {
+    outline: none !important;
+    border: none !important;
+    box-shadow: 0 8px 14px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 有链接的卡片（海报） */
 .goods-exhibition-item.has-link {
     cursor: pointer;
     display: flex;
@@ -254,7 +272,8 @@
     margin-left: auto;
     user-select: none;
     text-decoration: none;
-    outline: none;
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
     box-sizing: border-box;
 }
 .goods-exhibition-quickview-btn:hover {
@@ -264,8 +283,15 @@
     transform: translateY(-1px);
     box-shadow: 0 3px 8px rgba(37, 99, 235, 0.25);
 }
+.goods-exhibition-quickview-btn:focus,
+.goods-exhibition-quickview-btn:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
 .goods-exhibition-quickview-btn:active {
     transform: translateY(0);
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 /* 标题外链与图片外链支持 */

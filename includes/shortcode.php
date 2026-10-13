@@ -50,12 +50,8 @@ function goods_exhibition_render_product_card($product, $is_new = false)
     if ($is_new) {
         $inner .= '<span class="goods-exhibition-new-badge">NEW</span>';
     }
-    // title 属性支持原生悬浮提示：超长品名悬浮即可显示全名（若有外链，标题支持直接点击跳转）
-    if ($item_url) {
-        $inner .= '<h3 class="goods-exhibition-title" title="' . esc_attr($product['name']) . '"><a href="' . $item_url . '" target="_blank" rel="noopener noreferrer" class="goods-exhibition-title-link">' . $name . '</a></h3>';
-    } else {
-        $inner .= '<h3 class="goods-exhibition-title" title="' . esc_attr($product['name']) . '">' . $name . '</h3>';
-    }
+    // 标题：展示完整品名，不再包含外链 a 标签，全部统一由详情弹窗展示与跳转，彻底避免误触或第三方脚本捕获跳转
+    $inner .= '<h3 class="goods-exhibition-title" title="' . esc_attr($product['name']) . '">' . $name . '</h3>';
     // 描述同样增加 title 属性支持原生悬浮提示
     $inner .= '<div class="goods-exhibition-description" title="' . $desc_plain . '">' . $desc . '</div>';
 
@@ -78,9 +74,9 @@ function goods_exhibition_render_product_card($product, $is_new = false)
         . ' data-no-viewer="true" data-no-lightbox="true" data-lightbox="false" data-fancybox="none" data-no-zoom="true" draggable="false">';
     $inner .= '</div>';
 
-    // 卡片最外层统一为 div 容器（不再用 <a> 包裹整卡，解决点击详情按钮时误打开外部链接的问题）
-    $item_classes = 'goods-exhibition-item' . ($item_url ? ' has-link' : ' is-clickable has-quickview') . ($is_new ? ' is-new' : '');
-    return '<div class="' . $item_classes . '" data-id="' . intval($product['id']) . '" data-img="' . $image_url . '" data-url="' . $item_url . '" data-product="' . $product_json . '">' . $inner . '</div>';
+    // 卡片最外层统一为 div 容器（不设 data-url 和 has-link，杜绝任何第三方或主题脚本误识别外链；全部统一由详情弹窗承载）
+    $item_classes = 'goods-exhibition-item is-clickable' . ($is_new ? ' is-new' : '');
+    return '<div class="' . $item_classes . '" data-id="' . intval($product['id']) . '" data-img="' . $image_url . '" data-product="' . $product_json . '" role="button" tabindex="0" aria-label="' . esc_attr($product['name']) . ' 详情">' . $inner . '</div>';
 }
 
 /**
@@ -180,6 +176,10 @@ function goods_exhibition_render_poster_slider()
  */
 function goods_exhibition_shortcode_callback($atts)
 {
+    // 确保无论前端页面以何种方式调用短代码，前端样式与脚本均自动可靠入队
+    wp_enqueue_style('goods-exhibition-style');
+    wp_enqueue_script('goods-exhibition-script');
+
     $atts = shortcode_atts(array('limit' => -1), $atts, 'goods_exhibition');
 
     // 验证并清理limit参数

@@ -5,13 +5,19 @@
 (function () {
     'use strict';
 
-    document.addEventListener('DOMContentLoaded', function () {
+    function initAll() {
         initProductSliders();
         initPosterSlider();
         initNoLightbox();
         initMobilePeekHint();
         initQuickViewModal();
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAll);
+    } else {
+        initAll();
+    }
 
     /**
      * 阻止图片的默认查看行为
@@ -266,20 +272,21 @@
      * 初始化商品详情全貌弹窗（Quick View）
      */
     function initQuickViewModal() {
-        var modal = document.getElementById('goods-exhibition-quickview-modal');
-        if (!modal) return;
-
-        var imgEl = document.getElementById('goods-quickview-img');
-        var catEl = document.getElementById('goods-quickview-category');
-        var newEl = document.getElementById('goods-quickview-new');
-        var titleEl = document.getElementById('goods-quickview-title');
-        var priceEl = document.getElementById('goods-quickview-price');
-        var descEl = document.getElementById('goods-quickview-desc');
-        var actionsEl = document.getElementById('goods-quickview-actions');
-        var linkEl = document.getElementById('goods-quickview-link');
+        function getModal() {
+            return document.getElementById('goods-exhibition-quickview-modal');
+        }
 
         function openModal(data, triggerCard, triggerBtn) {
-            if (!data) return;
+            var modal = getModal();
+            if (!modal || !data) return;
+
+            var catEl = document.getElementById('goods-quickview-category');
+            var newEl = document.getElementById('goods-quickview-new');
+            var titleEl = document.getElementById('goods-quickview-title');
+            var priceEl = document.getElementById('goods-quickview-price');
+            var descEl = document.getElementById('goods-quickview-desc');
+            var actionsEl = document.getElementById('goods-quickview-actions');
+            var linkEl = document.getElementById('goods-quickview-link');
 
             // 先将弹窗设为可见，保证容器在视口中完成真实尺寸与布局计算
             modal.style.display = 'flex';
@@ -401,102 +408,99 @@
         }
 
         function closeModal() {
+            var modal = getModal();
+            if (!modal) return;
             modal.style.display = 'none';
             modal.setAttribute('aria-hidden', 'true');
             document.body.classList.remove('goods-modal-open');
         }
 
-        // 防黑框与防按下瞬间激活：在 pointerdown 捕获阶段拦截并清除焦点
+        // 清除残留焦点以防黑框：使用 passive 监听，绝不中断原生指针/鼠标管道
         document.addEventListener('pointerdown', function (e) {
-            var targetTrigger = e.target.closest('.goods-exhibition-image-container, .goods-exhibition-quickview-btn');
-            if (targetTrigger) {
-                if (targetTrigger.blur) targetTrigger.blur();
-                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            var trigger = e.target.closest('.goods-exhibition-item, .goods-exhibition-quickview-btn, .goods-exhibition-image-container');
+            if (trigger && trigger.blur) {
+                trigger.blur();
             }
-        }, true);
+        }, { passive: true });
 
-        // 核心：使用事件捕获阶段 (Capture Phase: true) 优先且强制拦截点击事件！
-        // 彻底阻断任何主题自带的 Lightbox / Viewer.js / Fancybox / PhotoSwipe 抢占 img 点击打开大图画廊，
-        // 同时在点击后立刻调用 blur()，防止浏览器绘制任何焦点黑框 / 边框。
+        // 核心：使用事件捕获阶段 (Capture Phase: true) 优先拦截所有商品卡片点击！
+        // 彻底阻断原生/主题的链接跳转或大图画廊行为，确保点击图片、详情按钮或卡片任何位置，均唯一唤起详情弹窗。
         document.addEventListener('click', function (e) {
-            // 1. 点击详情按钮：只弹窗，不打开任何外部链接
-            var btn = e.target.closest('.goods-exhibition-quickview-btn');
-            if (btn) {
+            // 1. 判断是否点击了商品卡片（排除海报轮播 poster-item）
+            var card = e.target.closest('.goods-exhibition-item:not(.poster-item)');
+            if (card) {
                 e.preventDefault();
                 e.stopPropagation();
-                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-                if (btn.blur) btn.blur();
-                var card = btn.closest('.goods-exhibition-item');
-                try {
-                    var data = JSON.parse(btn.getAttribute('data-product') || '{}');
-                    openModal(data, card, btn);
-                } catch (err) {}
-                return;
-            }
-
-            // 2. 点击商品图片或图片容器：同样只唤起详情弹窗，完全阻止大图画廊与黑框
-            var imgContainer = e.target.closest('.goods-exhibition-image-container');
-            if (imgContainer) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-                if (imgContainer.blur) imgContainer.blur();
-                var card = imgContainer.closest('.goods-exhibition-item');
-                if (card) {
-                    var cardBtn = card.querySelector('.goods-exhibition-quickview-btn');
-                    try {
-                        var cardData = JSON.parse(card.getAttribute('data-product') || (cardBtn ? cardBtn.getAttribute('data-product') : '{}'));
-                        openModal(cardData, card, cardBtn);
-                    } catch (err) {}
+                if (e.stopImmediatePropagation) {
+                    e.stopImmediatePropagation();
                 }
-                return;
-            }
 
-            // 3. 点击未设置外链的商品卡片空白区域
-            var card = e.target.closest('.goods-exhibition-item.has-quickview');
-            if (card && !e.target.closest('a') && !e.target.closest('button')) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
                 if (card.blur) card.blur();
+                var triggerBtn = card.querySelector('.goods-exhibition-quickview-btn');
+                if (triggerBtn && triggerBtn.blur) triggerBtn.blur();
+                if (document.activeElement && document.activeElement.blur) {
+                    document.activeElement.blur();
+                }
+
                 try {
-                    var cardData = JSON.parse(card.getAttribute('data-product') || '{}');
-                    openModal(cardData, card, null);
-                } catch (err) {}
-                return;
+                    var rawData = card.getAttribute('data-product') || (triggerBtn ? triggerBtn.getAttribute('data-product') : '{}');
+                    var data = typeof rawData === 'string' ? JSON.parse(rawData || '{}') : rawData;
+                    openModal(data, card, triggerBtn);
+                } catch (err) {
+                    console.error('[Goods Exhibition] Failed to parse product JSON:', err);
+                }
+                return false;
             }
 
-            // 4. 点击关闭按钮或背景遮罩
+            // 2. 点击关闭按钮或背景遮罩
             if (e.target.closest('.goods-quickview-close') || e.target.classList.contains('goods-quickview-overlay')) {
                 e.preventDefault();
                 e.stopPropagation();
-                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+                if (e.stopImmediatePropagation) {
+                    e.stopImmediatePropagation();
+                }
                 closeModal();
+                return false;
             }
         }, true);
 
-        // 键盘无障碍支持：Enter / Space 激活详情按钮或图片容器
-        document.addEventListener('keydown', function (e) {
-            var trigger = e.target.closest('.goods-exhibition-quickview-btn, .goods-exhibition-image-container');
-            if ((e.key === 'Enter' || e.key === ' ') && trigger) {
+        // 阻止商品卡片上的鼠标中键在新标签打开
+        document.addEventListener('auxclick', function (e) {
+            if (e.target.closest('.goods-exhibition-item:not(.poster-item)')) {
                 e.preventDefault();
                 e.stopPropagation();
-                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-                if (trigger.blur) trigger.blur();
-                var card = trigger.closest('.goods-exhibition-item');
-                if (card) {
-                    var cardBtn = card.querySelector('.goods-exhibition-quickview-btn');
-                    try {
-                        var data = JSON.parse(card.getAttribute('data-product') || (cardBtn ? cardBtn.getAttribute('data-product') : '{}'));
-                        openModal(data, card, cardBtn);
-                    } catch (err) {}
+                if (e.stopImmediatePropagation) {
+                    e.stopImmediatePropagation();
                 }
-                return;
+            }
+        }, true);
+
+        // 键盘无障碍支持：Enter / Space 激活商品详情弹窗，ESC 键关闭
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                var card = e.target.closest('.goods-exhibition-item:not(.poster-item)');
+                if (card) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.stopImmediatePropagation) {
+                        e.stopImmediatePropagation();
+                    }
+                    var triggerBtn = card.querySelector('.goods-exhibition-quickview-btn');
+                    try {
+                        var rawData = card.getAttribute('data-product') || (triggerBtn ? triggerBtn.getAttribute('data-product') : '{}');
+                        var data = typeof rawData === 'string' ? JSON.parse(rawData || '{}') : rawData;
+                        openModal(data, card, triggerBtn);
+                    } catch (err) {}
+                    return;
+                }
             }
 
             // ESC 键关闭
-            if (e.key === 'Escape' && modal.style.display !== 'none') {
-                closeModal();
+            if (e.key === 'Escape') {
+                var modal = getModal();
+                if (modal && modal.style.display !== 'none') {
+                    closeModal();
+                }
             }
         });
     }
