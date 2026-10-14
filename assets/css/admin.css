@@ -671,19 +671,64 @@
     border-color: #cbd5e1;
 }
 
+.ge-tag-box:focus-within {
+    border-color: var(--ge-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.ge-tag-box.ge-tag-box-editable {
+    cursor: text;
+}
+
 .ge-tag-box-placeholder {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    max-width: calc(100% - 20px);
     color: var(--ge-text-light);
     font-size: 13px;
     user-select: none;
-    line-height: 30px;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    z-index: 1;
 }
 
 .ge-tag-box-chips {
-    display: flex;
+    display: inline-flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    width: 100%;
+    z-index: 2;
+}
+
+.ge-tag-box-chips:empty {
+    display: none;
+}
+
+.ge-tag-custom-input {
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 2px 4px !important;
+    margin: 0 !important;
+    font-size: 13px;
+    color: var(--ge-text);
+    min-width: 140px;
+    flex: 1 1 auto;
+    height: 28px;
+    line-height: 28px;
+    box-sizing: border-box;
+    z-index: 2;
+}
+
+.ge-tag-custom-input::placeholder {
+    color: var(--ge-text-light);
+    font-size: 12.5px;
 }
 
 .ge-tag-chip {
@@ -1018,6 +1063,22 @@
     max-height: 98px;
     aspect-ratio: 16 / 6;
     object-fit: cover;
+}
+
+/* 自定义品牌 Logo Dropzone 预览样式 */
+.ge-dropzone.brand-logo-dropzone {
+    padding: 16px 16px;
+}
+
+.ge-dropzone-preview.brand-logo-preview img {
+    max-width: 140px;
+    max-height: 80px;
+    padding: 6px;
+    background: #ffffff;
+    border-radius: var(--ge-radius-sm);
+    box-shadow: var(--ge-shadow-sm);
+    border: 1px solid var(--ge-border);
+    object-fit: contain;
 }
 
 .ge-preview-actions {

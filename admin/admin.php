@@ -1192,9 +1192,10 @@ function goods_exhibition_render_product_list_tab()
                         <div class="ge-form-group">
                             <label class="ge-label">特色卖点标签（卡片底部胶囊，最多可选2个）</label>
                             <input type="hidden" name="product_badge_tag" id="product_badge_tag" value="">
-                            <div class="ge-tag-box" id="product_badge_tag_box" data-target="#product_badge_tag" data-max="2">
-                                <span class="ge-tag-box-placeholder">点击下方预设胶囊自动注入（最多可选 2 个）</span>
+                            <div class="ge-tag-box ge-tag-box-editable" id="product_badge_tag_box" data-target="#product_badge_tag" data-max="2">
+                                <span class="ge-tag-box-placeholder">点击下方预设胶囊自动注入，或输入自定义卖点按回车（最多 2 个）</span>
                                 <div class="ge-tag-box-chips"></div>
+                                <input type="text" class="ge-tag-custom-input" id="product_badge_custom_input" maxlength="6" autocomplete="off" placeholder="">
                             </div>
                             <div class="ge-quick-tag-bar" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;">
                                 <span class="ge-help-text" style="align-self:center; margin:0 4px 0 0;">预设胶囊：</span>
@@ -1227,7 +1228,7 @@ function goods_exhibition_render_product_list_tab()
                                 <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="极速发货 📦">极速发货 📦</button>
                                 <button type="button" class="ge-btn ge-btn-xs ge-btn-secondary ge-quick-tag-btn" data-target="#product_badge_tag" data-val="全国联保 🛡️">全国联保 🛡️</button>
                             </div>
-                            <p class="ge-help-text">卡片左下角特色卖点，最多可选 2 个。鼠标悬浮已选标签可点击右上角 × 移除。</p>
+                            <p class="ge-help-text">卡片左下角特色卖点，最多可选 2 个。支持直接键入文字按回车自定义（最多6字，自动附带🔥），或点选下方预设胶囊。鼠标悬浮已选标签可点击右上角 × 移除。</p>
                         </div>
 
                         <!-- 所属品牌 (仅支持选择内置品牌) -->
@@ -1292,14 +1293,25 @@ function goods_exhibition_render_product_list_tab()
                             </div>
 
                             <div style="margin-bottom:8px;">
-                                <label for="product_brand_logo" style="font-size:12.5px; font-weight:600; color:#475569; display:block; margin-bottom:5px;">自定义品牌 Logo 图标 (可选)</label>
-                                <div style="display:flex; gap:8px;">
-                                    <div class="ge-input-with-clear-wrap" style="flex:1;">
-                                        <input type="url" name="product_brand_logo" id="product_brand_logo" class="ge-input ge-input-with-clear"
-                                            placeholder="输入品牌 Logo 图片链接（https://...）或从媒体库选择" style="padding-right:38px;">
-                                        <button type="button" class="ge-field-clear-btn" data-target="#product_brand_logo" title="清除Logo链接" style="display:none;">&times;</button>
+                                <label style="font-size:12.5px; font-weight:600; color:#475569; display:block; margin-bottom:5px;">自定义品牌 Logo 图标 (可选)</label>
+                                <div class="ge-dropzone brand-logo-dropzone" id="brand-logo-dropzone">
+                                    <input type="hidden" name="product_brand_logo" id="product_brand_logo" value="">
+
+                                    <div class="ge-dropzone-content">
+                                        <span class="ge-dropzone-icon">
+                                            <?php echo goods_exhibition_get_icon('upload'); ?>
+                                        </span>
+                                        <div class="ge-dropzone-text">点击上传品牌Logo</div>
                                     </div>
-                                    <button type="button" class="ge-btn ge-btn-secondary" id="ge_select_brand_logo_btn" style="white-space:nowrap; flex-shrink:0;">媒体库选择</button>
+
+                                    <div class="ge-dropzone-preview brand-logo-preview is-hidden">
+                                        <div class="ge-preview-actions">
+                                            <button type="button" class="ge-btn ge-btn-sm ge-btn-secondary ge-replace-img-btn" id="upload_brand_logo_button">更换Logo</button>
+                                            <button type="button" class="ge-btn ge-btn-sm ge-btn-danger-outline goods-image-delete-btn"
+                                                data-target="#product_brand_logo" data-preview=".brand-logo-preview" data-dropzone="#brand-logo-dropzone"
+                                                data-label="品牌Logo">删除Logo</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

@@ -30,6 +30,7 @@
     function initMediaUploader() {
         var mediaUploaderProduct;
         var mediaUploaderPoster;
+        var mediaUploaderBrandLogo;
 
         // 打开产品图片选择媒体库
         function openProductMedia() {
@@ -130,6 +131,56 @@
             e.preventDefault();
             e.stopPropagation();
             openPosterMedia();
+        });
+
+        // 打开品牌 Logo 选择媒体库
+        function openBrandLogoMedia() {
+            if (mediaUploaderBrandLogo) {
+                mediaUploaderBrandLogo.open();
+                return;
+            }
+
+            mediaUploaderBrandLogo = wp.media({
+                title: '选择品牌 Logo 图标',
+                button: { text: '使用此图标' },
+                library: { type: 'image' },
+                multiple: false
+            });
+
+            mediaUploaderBrandLogo.on('select', function() {
+                var attachment = mediaUploaderBrandLogo.state().get('selection').first().toJSON();
+                var url = attachment.url;
+                $('#product_brand_logo').val(url).trigger('change');
+
+                var $dropzone = $('#brand-logo-dropzone');
+                var $preview = $dropzone.find('.brand-logo-preview');
+                var $content = $dropzone.find('.ge-dropzone-content');
+
+                if ($preview.find('img').length === 0) {
+                    $preview.prepend('<img src="' + url + '" alt="品牌Logo预览">');
+                } else {
+                    $preview.find('img').attr('src', url);
+                }
+
+                $content.addClass('is-hidden');
+                $preview.removeClass('is-hidden');
+            });
+
+            mediaUploaderBrandLogo.open();
+        }
+
+        // 品牌 Logo Dropzone 点击交互
+        $('#brand-logo-dropzone').on('click', function(e) {
+            if ($(e.target).closest('button').length) {
+                return;
+            }
+            openBrandLogoMedia();
+        });
+
+        $('#upload_brand_logo_button').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openBrandLogoMedia();
         });
     }
 
@@ -1024,13 +1075,35 @@
             $('#product_currency').val(detectedCurrency);
             $('#product_price').val(cleanPrice);
             $('#product_badge_tag').val(product.badge_tag || '');
+            $('#product_badge_custom_input').val('');
             syncTagBoxFromInput('#product_badge_tag');
 
             $('#product_brand').val(product.brand || '');
             syncTagBoxFromInput('#product_brand');
 
             $('#product_custom_brand').val(product.custom_brand || '').trigger('input');
-            $('#product_brand_logo').val(product.brand_logo || '').trigger('input');
+
+            // 品牌 Logo 回填与预览
+            var brandLogoUrl = product.brand_logo || '';
+            $('#product_brand_logo').val(brandLogoUrl);
+
+            var $logoDropzone = $('#brand-logo-dropzone');
+            var $logoPreview = $logoDropzone.find('.brand-logo-preview');
+            var $logoContent = $logoDropzone.find('.ge-dropzone-content');
+
+            if (brandLogoUrl) {
+                if ($logoPreview.find('img').length === 0) {
+                    $logoPreview.prepend('<img src="' + brandLogoUrl + '" alt="品牌Logo预览">');
+                } else {
+                    $logoPreview.find('img').attr('src', brandLogoUrl);
+                }
+                $logoContent.addClass('is-hidden');
+                $logoPreview.removeClass('is-hidden');
+            } else {
+                $logoPreview.find('img').remove();
+                $logoPreview.addClass('is-hidden');
+                $logoContent.removeClass('is-hidden');
+            }
 
             $('#product_url').val(product.url || '');
             $('#product_category').val(product.category || '');
@@ -1095,13 +1168,20 @@
             $('#product_price').val('');
 
             $('#product_badge_tag').val('');
+            $('#product_badge_custom_input').val('');
             syncTagBoxFromInput('#product_badge_tag');
 
             $('#product_brand').val('');
             syncTagBoxFromInput('#product_brand');
 
             $('#product_custom_brand').val('').trigger('input');
-            $('#product_brand_logo').val('').trigger('input');
+            $('#product_brand_logo').val('');
+
+            var $logoDropzone = $('#brand-logo-dropzone');
+            $logoDropzone.find('.brand-logo-preview img').remove();
+            $logoDropzone.find('.brand-logo-preview').addClass('is-hidden');
+            $logoDropzone.find('.ge-dropzone-content').removeClass('is-hidden');
+
             $('#product_image_url').val('');
             $('#poster_image_url').val('');
             $('#product_image').val('');
@@ -1191,6 +1271,24 @@
                 $placeholder.show();
             }
 
+            // 特色卖点标签：动态控制自定义输入框的显示与占位符
+            if (targetSelector === '#product_badge_tag') {
+                var $customInput = $('#product_badge_custom_input');
+                if ($customInput.length) {
+                    $customInput.val('');
+                    if (tags.length >= max) {
+                        $customInput.hide();
+                    } else {
+                        $customInput.show();
+                        if (tags.length > 0) {
+                            $customInput.attr('placeholder', '回车添加第2个（最多6字）...');
+                        } else {
+                            $customInput.attr('placeholder', '');
+                        }
+                    }
+                }
+            }
+
             // 同步预设胶囊按钮的高亮选中状态
             if (targetSelector === '#product_badge_tag') {
                 $('.ge-quick-tag-btn[data-target="' + targetSelector + '"]').each(function() {
@@ -1214,23 +1312,7 @@
             }
         }
 
-        // 品牌 Logo 媒体库选择器
-        $(document).on('click', '#ge_select_brand_logo_btn', function(e) {
-            e.preventDefault();
-            var brandLogoFrame = wp.media({
-                title: '选择品牌 Logo 图标',
-                button: { text: '使用此图标' },
-                library: { type: 'image' },
-                multiple: false
-            });
-            brandLogoFrame.on('select', function() {
-                var attachment = brandLogoFrame.state().get('selection').first().toJSON();
-                $('#product_brand_logo').val(attachment.url).trigger('input');
-            });
-            brandLogoFrame.open();
-        });
-
-        // 输入框右侧 X 快捷清除按钮 (仅用于自定义品牌文字与Logo输入框)
+        // 输入框右侧 X 快捷清除按钮 (用于自定义品牌文字输入框)
         $(document).on('click', '.ge-field-clear-btn', function(e) {
             e.preventDefault();
             var targetSelector = $(this).data('target');
@@ -1302,9 +1384,98 @@
                 }
                 $input.val(tags.join(', '));
                 syncTagBoxFromInput(target);
+                var $customInput = $('#product_badge_custom_input');
+                if ($customInput.is(':visible')) {
+                    $customInput.focus();
+                }
             } else if (target === '#product_brand') {
                 $input.val('');
                 syncTagBoxFromInput(target);
+            }
+        });
+
+        // 自定义特色卖点标签回车添加
+        function addCustomBadgeTag() {
+            var $customInput = $('#product_badge_custom_input');
+            if (!$customInput.length) return;
+            var val = $.trim($customInput.val());
+            if (!val) return;
+
+            // 限制最多 6 个汉字/字符（Array.from 避免多字节/emoji 被截断）
+            var chars = Array.from(val);
+            if (chars.length > 6) {
+                chars = chars.slice(0, 6);
+            }
+            var rawChars = chars.join('').trim();
+            if (!rawChars) return;
+
+            // 后面添加默认的 🔥 图标，样式与预设保持一致（若末尾已带 🔥 则避免重复）
+            var cleanText = rawChars.replace(/\s*🔥\s*$/u, '').trim();
+            if (!cleanText) return;
+            var finalTag = cleanText + ' 🔥';
+
+            var $hidden = $('#product_badge_tag');
+            var curVal = $.trim($hidden.val());
+            var tags = curVal ? curVal.split(/[,，、;；|]+/).map($.trim).filter(Boolean) : [];
+
+            if (tags.indexOf(finalTag) !== -1) {
+                alert('已存在相同的特色卖点标签：「' + finalTag + '」');
+                $customInput.val('');
+                return;
+            }
+
+            if (tags.length >= 2) {
+                alert('特色卖点标签最多只能添加 2 个，请先删除已有标签后再添加。');
+                $customInput.val('');
+                return;
+            }
+
+            tags.push(finalTag);
+            $hidden.val(tags.join(', '));
+            syncTagBoxFromInput('#product_badge_tag');
+            $customInput.val('');
+        }
+
+        // 自定义卖点输入框：回车添加标签，空内容时按退格快捷删除末尾标签
+        $(document).on('keydown', '#product_badge_custom_input', function(e) {
+            if (e.isComposing || e.keyCode === 229) {
+                return;
+            }
+            if (e.key === 'Enter' || e.keyCode === 13) {
+                e.preventDefault();
+                e.stopPropagation();
+                addCustomBadgeTag();
+            } else if (e.key === 'Backspace' && !$(this).val()) {
+                var $hidden = $('#product_badge_tag');
+                var curVal = $.trim($hidden.val());
+                var tags = curVal ? curVal.split(/[,，、;；|]+/).map($.trim).filter(Boolean) : [];
+                if (tags.length > 0) {
+                    tags.pop();
+                    $hidden.val(tags.join(', '));
+                    syncTagBoxFromInput('#product_badge_tag');
+                }
+            }
+        });
+
+        // 监听自定义输入框输入，有内容时隐藏绝对定位的占位提示，内容清空且无标签时恢复占位提示
+        $(document).on('input propertychange', '#product_badge_custom_input', function() {
+            var $box = $('#product_badge_tag_box');
+            var $placeholder = $box.find('.ge-tag-box-placeholder');
+            var $hidden = $('#product_badge_tag');
+            var curVal = $.trim($hidden.val());
+            if ($.trim($(this).val()).length > 0) {
+                $placeholder.hide();
+            } else if (!curVal) {
+                $placeholder.show();
+            }
+        });
+
+        // 点击标签容器框空白区域，自动聚焦到自定义输入框
+        $(document).on('click', '#product_badge_tag_box', function(e) {
+            if ($(e.target).closest('.ge-tag-chip, .ge-tag-chip-remove').length) return;
+            var $customInput = $('#product_badge_custom_input');
+            if ($customInput.is(':visible')) {
+                $customInput.focus();
             }
         });
 
