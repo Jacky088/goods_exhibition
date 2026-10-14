@@ -657,6 +657,18 @@
     }
 
     /**
+     * 表格拖拽辅助函数：保持各 <td> 物理像素宽度，防止拖拽绝对定位时表格行塌陷变形跑偏
+     */
+    function fixTableSortHelper(e, tr) {
+        var $originals = tr.children();
+        var $helper = tr.clone();
+        $helper.children().each(function(index) {
+            $(this).width($originals.eq(index).outerWidth());
+        });
+        return $helper;
+    }
+
+    /**
      * 初始化分类列表拖拽排序
      */
     function initCategorySort() {
@@ -669,9 +681,13 @@
             axis: 'y',
             tolerance: 'pointer',
             forcePlaceholderSize: true,
-            opacity: 0.75,
+            opacity: 0.85,
             cursor: 'grabbing',
+            helper: fixTableSortHelper,
             placeholder: 'goods-sort-placeholder',
+            start: function(e, ui) {
+                ui.placeholder.height(ui.helper.outerHeight());
+            },
             update: function() {
                 var order = [];
                 $tbody.find('tr:not(.ge-empty-row)').each(function(index) {
@@ -706,23 +722,34 @@
         if (!$table.length) return;
 
         var $tbody = $('#goods-sortable-body');
+        var paged = parseInt($table.data('paged'), 10) || 1;
+        var perPage = parseInt($table.data('per-page'), 10) || 10;
+        var offset = (paged - 1) * perPage;
 
         $tbody.sortable({
             handle: '.ge-drag-handle',
+            items: '> tr:not(.ge-empty-row)',
             axis: 'y',
-            opacity: 0.75,
+            tolerance: 'pointer',
+            forcePlaceholderSize: true,
+            opacity: 0.85,
             cursor: 'grabbing',
+            helper: fixTableSortHelper,
             placeholder: 'goods-sort-placeholder',
+            start: function(e, ui) {
+                ui.placeholder.height(ui.helper.outerHeight());
+            },
             update: function() {
                 var order = [];
-                $tbody.find('tr').each(function() {
+                $tbody.find('tr:not(.ge-empty-row)').each(function() {
                     order.push($(this).data('id'));
                 });
 
                 $.post(goodsExhibitionAdmin.ajaxUrl, {
                     action: 'goods_exhibition_save_sort',
                     nonce: goodsExhibitionAdmin.nonce,
-                    order: order
+                    order: order,
+                    offset: offset
                 }, function(response) {
                     if (response && response.success) {
                         var $notice = $('<div class="ge-alert ge-alert-success"><div class="ge-alert-content"><span>产品排序已保存</span></div></div>');
@@ -765,9 +792,12 @@
             axis: 'y',
             tolerance: 'pointer',
             forcePlaceholderSize: true,
-            opacity: 0.8,
+            opacity: 0.85,
             cursor: 'grabbing',
             placeholder: 'goods-sort-placeholder',
+            start: function(e, ui) {
+                ui.placeholder.height(ui.helper.outerHeight());
+            },
             update: function() {
                 var order = [];
                 $list.find('.ge-poster-item').each(function() {

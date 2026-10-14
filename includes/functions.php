@@ -22,7 +22,7 @@ function goods_exhibition_get_frontend_products($limit = -1)
     $limit = intval($limit);
     $cache_key = 'goods_exhibition_frontend_products_' . goods_exhibition_cache_version() . '_' . $limit . '_' . goods_exhibition_code_stamp();
     $cached = get_transient($cache_key);
-    if (false !== $cached) {
+    if (false !== $cached && !empty($cached)) {
         return $cached;
     }
 
@@ -30,38 +30,56 @@ function goods_exhibition_get_frontend_products($limit = -1)
     $table_name = $wpdb->prefix . 'goods_exhibition';
     $categories_table = $wpdb->prefix . 'goods_exhibition_categories';
 
-    // 排序逻辑：分类按分类表的 sort_order 升序（数字越小越靠前，符合后台配置语义），
-    // 未在分类表中的分类（如历史遗留）则按名字字典序兜底。
-    // 组内按 sort_order ASC, created_at DESC。
-    $order_by = "cat_sort_order ASC, category ASC, t.sort_order ASC, t.created_at DESC";
-    $select  = "t.*, cat.sort_order AS cat_sort_order";
-    $join    = "LEFT JOIN `{$categories_table}` cat ON cat.name = t.category";
-
-    // 使用prepare防止SQL注入
-    if ($limit > 0) {
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT {$select} FROM `{$table_name}` t {$join} ORDER BY {$order_by} LIMIT %d",
-                $limit
-            ),
-            ARRAY_A
-        );
-    } else {
-        $results = $wpdb->get_results(
-            "SELECT {$select} FROM `{$table_name}` t {$join} ORDER BY {$order_by}",
-            ARRAY_A
-        );
-    }
-
-    // 把 cat_sort_order 临时字段从结果中剔除，保持返回值结构与原来一致
-    if (is_array($results)) {
-        foreach ($results as &$row) {
-            unset($row['cat_sort_order']);
+    // 1. 获取所有分类的自定义排序权重（杜绝 SQL 跨表字符串 ON cat.name = t.category 引发的 Illegal mix of collations 崩溃）
+    $cat_weights = array();
+    $categories = $wpdb->get_results("SELECT name, sort_order FROM `{$categories_table}` ORDER BY sort_order ASC, id ASC", ARRAY_A);
+    if (!empty($categories) && is_array($categories)) {
+        foreach ($categories as $cat_row) {
+            if (isset($cat_row['name'])) {
+                $cat_weights[trim($cat_row['name'])] = intval($cat_row['sort_order']);
+            }
         }
-        unset($row);
     }
 
-    set_transient($cache_key, $results, 12 * HOUR_IN_SECONDS);
+    // 2. 独立查询全量产品数据（无外键字符串联查，跨字符集与跨校对规则 100% 绝对可靠）
+    $results = $wpdb->get_results("SELECT * FROM `{$table_name}` ORDER BY sort_order ASC, created_at DESC", ARRAY_A);
+
+    if (!is_array($results) || empty($results)) {
+        return array();
+    }
+
+    // 3. 在 PHP 内存层执行精准分组排序：分类权重 ASC -> 分类名称 ASC -> 组内商品自定义排序 ASC -> 添加时间 DESC
+    usort($results, function ($a, $b) use ($cat_weights) {
+        $catA = isset($a['category']) ? trim($a['category']) : '';
+        $catB = isset($b['category']) ? trim($b['category']) : '';
+
+        $weightA = isset($cat_weights[$catA]) ? $cat_weights[$catA] : 999999;
+        $weightB = isset($cat_weights[$catB]) ? $cat_weights[$catB] : 999999;
+
+        if ($weightA !== $weightB) {
+            return $weightA - $weightB;
+        }
+        if ($catA !== $catB) {
+            return strcmp($catA, $catB);
+        }
+        $sortA = isset($a['sort_order']) ? intval($a['sort_order']) : 0;
+        $sortB = isset($b['sort_order']) ? intval($b['sort_order']) : 0;
+        if ($sortA !== $sortB) {
+            return $sortA - $sortB;
+        }
+        $idA = isset($a['id']) ? intval($a['id']) : 0;
+        $idB = isset($b['id']) ? intval($b['id']) : 0;
+        return $idB - $idA;
+    });
+
+    if ($limit > 0 && count($results) > $limit) {
+        $results = array_slice($results, 0, $limit);
+    }
+
+    if (!empty($results)) {
+        set_transient($cache_key, $results, 12 * HOUR_IN_SECONDS);
+    }
+
     return $results;
 }
 

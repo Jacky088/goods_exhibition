@@ -1484,6 +1484,9 @@
     padding: 4px;
     border-radius: 4px;
     transition: var(--ge-transition);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
 }
 
 .ge-drag-handle:hover {
@@ -1495,11 +1498,37 @@
     cursor: grabbing;
 }
 
+/* 拖拽排序助手与占位符：强制消除 transition 延迟，实现 100% 紧密跟手 */
+.ui-sortable-helper {
+    transition: none !important;
+    pointer-events: none;
+    z-index: 99999 !important;
+}
+
+.ge-table tbody tr.ui-sortable-helper {
+    background: #ffffff !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid var(--ge-primary-border) !important;
+    display: table !important;
+    table-layout: fixed !important;
+}
+
+.ge-table tbody tr.ui-sortable-helper td {
+    background: #ffffff !important;
+    border-bottom: none !important;
+}
+
 /* 拖拽占位符 */
 .goods-sort-placeholder {
     background: #eff6ff !important;
     border: 2px dashed #3b82f6 !important;
     height: 48px;
+    box-sizing: border-box;
+}
+
+tr.goods-sort-placeholder {
+    display: table-row !important;
+    background: #eff6ff !important;
 }
 
 /* ==========================================================================
@@ -1592,10 +1621,11 @@
 }
 
 .ge-poster-item.ui-sortable-helper {
-    border-color: var(--ge-primary);
-    box-shadow: var(--ge-shadow-lg);
-    background: #ffffff;
-    transform: scale(1.01);
+    border-color: var(--ge-primary) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15) !important;
+    background: #ffffff !important;
+    transform: none !important;
+    transition: none !important;
 }
 
 .ge-poster-left {

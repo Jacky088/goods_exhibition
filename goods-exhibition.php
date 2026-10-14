@@ -3,7 +3,7 @@
  * Plugin Name: 好物页面插件
  * Plugin URI: https://github.com/Jacky088/goods_exhibition
  * Description: 一个展示好物商品的WordPress插件（已通过安全审查和优化）
- * Version: 2.1.2
+ * Version: 2.1.3
  * Author: 木木
  * Author URI: https://github.com/Jacky088/goods_exhibition
  * License: GPL v2 or later
@@ -19,7 +19,7 @@ if (!defined('WPINC')) {
 }
 
 // 定义插件版本
-define('GOODS_EXHIBITION_VERSION', '2.1.2');
+define('GOODS_EXHIBITION_VERSION', '2.1.3');
 // 定义插件路径
 define('GOODS_EXHIBITION_PATH', plugin_dir_path(__FILE__));
 // 定义插件URL
@@ -155,27 +155,41 @@ function goods_exhibition_setup_database()
 
     dbDelta($sql);
 
-    // 确保升级时新字段可靠补齐
+    // 确保升级时新字段可靠补齐（无须依赖特定列相对位置，杜绝因缺失前置列引发的级联失败）
     $columns = $wpdb->get_col("SHOW COLUMNS FROM `{$table_name}`");
     if (!empty($columns)) {
         if (!in_array('badge_tag', $columns)) {
-            $wpdb->query("ALTER TABLE `{$table_name}` ADD `badge_tag` varchar(50) DEFAULT '' NOT NULL AFTER `category`");
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `badge_tag` varchar(50) DEFAULT '' NOT NULL");
         }
         if (!in_array('price_suffix', $columns)) {
-            $wpdb->query("ALTER TABLE `{$table_name}` ADD `price_suffix` varchar(20) DEFAULT '' NOT NULL AFTER `price`");
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `price_suffix` varchar(20) DEFAULT '' NOT NULL");
         }
         if (!in_array('cta_text', $columns)) {
-            $wpdb->query("ALTER TABLE `{$table_name}` ADD `cta_text` varchar(50) DEFAULT '' NOT NULL AFTER `badge_tag`");
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `cta_text` varchar(50) DEFAULT '' NOT NULL");
         }
         if (!in_array('brand', $columns)) {
-            $wpdb->query("ALTER TABLE `{$table_name}` ADD `brand` varchar(50) DEFAULT '' NOT NULL AFTER `cta_text`");
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `brand` varchar(50) DEFAULT '' NOT NULL");
         }
         if (!in_array('custom_brand', $columns)) {
-            $wpdb->query("ALTER TABLE `{$table_name}` ADD `custom_brand` varchar(50) DEFAULT '' NOT NULL AFTER `brand`");
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `custom_brand` varchar(50) DEFAULT '' NOT NULL");
         }
         if (!in_array('brand_logo', $columns)) {
-            $wpdb->query("ALTER TABLE `{$table_name}` ADD `brand_logo` varchar(500) DEFAULT '' NOT NULL AFTER `custom_brand`");
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `brand_logo` varchar(1000) DEFAULT '' NOT NULL");
         }
+        if (!in_array('is_poster', $columns)) {
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `is_poster` tinyint(1) DEFAULT 0 NOT NULL");
+        }
+        if (!in_array('poster_image_url', $columns)) {
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `poster_image_url` varchar(500) DEFAULT '' NOT NULL");
+        }
+        if (!in_array('sort_order', $columns)) {
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD `sort_order` int DEFAULT 0 NOT NULL");
+        }
+    }
+
+    // 确保数据表采用 utf8mb4 字符集（防止卖点胶囊包含 🔥 等 Emoji 字符时出现 Incorrect string value 错误）
+    if ($wpdb->has_cap('utf8mb4')) {
+        $wpdb->query("ALTER TABLE `{$table_name}` CONVERT TO CHARACTER SET utf8mb4");
     }
 
     // 补齐可能缺失的索引（dbDelta 对索引的处理不完整，旧版升级时手动补回）
@@ -206,6 +220,10 @@ function goods_exhibition_setup_database()
         UNIQUE KEY name_unique (name)
     ) $charset_collate;";
     dbDelta($sql_categories);
+
+    if ($wpdb->has_cap('utf8mb4')) {
+        $wpdb->query("ALTER TABLE `{$categories_table}` CONVERT TO CHARACTER SET utf8mb4");
+    }
 
     // 将现有产品的分类迁移到分类表（如果分类表为空）
     $existing_count = (int) $wpdb->get_var("SELECT COUNT(*) FROM `{$categories_table}`");
@@ -424,6 +442,9 @@ function goods_exhibition_ajax_save_sort()
     global $wpdb;
     $table_name = $wpdb->prefix . 'goods_exhibition';
 
+    // 支持基于分页偏移的全局索引计算（避免第 2 页排序覆盖第 1 页的 sort_order）
+    $offset = isset($_POST['offset']) ? max(0, intval($_POST['offset'])) : 0;
+
     // 单条 CASE WHEN 批量更新，代替逐行 UPDATE 的 N 次数据库往返
     $cases = array();
     $ids = array();
@@ -433,7 +454,7 @@ function goods_exhibition_ajax_save_sort()
             continue; // 跳过无效值与重复 ID
         }
         $ids[$product_id] = $product_id;
-        $cases[] = $wpdb->prepare('WHEN %d THEN %d', $product_id, intval($position));
+        $cases[] = $wpdb->prepare('WHEN %d THEN %d', $product_id, intval($position) + $offset);
     }
 
     if (empty($ids)) {

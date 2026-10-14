@@ -437,6 +437,7 @@ function goods_exhibition_handle_product_form_action()
     $product_category = isset($_POST['product_category']) ? sanitize_text_field($_POST['product_category']) : '';
     $product_price_suffix = isset($_POST['product_price_suffix']) ? sanitize_text_field(wp_unslash($_POST['product_price_suffix'])) : '';
     $product_badge_tag = isset($_POST['product_badge_tag']) ? sanitize_text_field(wp_unslash($_POST['product_badge_tag'])) : '';
+    $product_cta_text = isset($_POST['product_cta_text']) ? sanitize_text_field(wp_unslash($_POST['product_cta_text'])) : '';
     $product_brand = isset($_POST['product_brand']) ? sanitize_text_field(wp_unslash($_POST['product_brand'])) : '';
     $product_custom_brand = isset($_POST['product_custom_brand']) ? sanitize_text_field(wp_unslash($_POST['product_custom_brand'])) : '';
     $product_brand_logo = isset($_POST['product_brand_logo']) ? esc_url_raw($_POST['product_brand_logo']) : '';
@@ -515,26 +516,37 @@ function goods_exhibition_handle_product_form_action()
     }
 
     if (empty($errors)) {
+        // 自愈与健壮性保障：检查数据表关键字段，若缺失则自动触发建表升级
+        $existing_cols = $wpdb->get_col("SHOW COLUMNS FROM `{$table_name}`");
+        $required_cols = array('badge_tag', 'price_suffix', 'cta_text', 'brand', 'custom_brand', 'brand_logo', 'is_poster', 'poster_image_url', 'sort_order');
+        if (!empty(array_diff($required_cols, $existing_cols))) {
+            goods_exhibition_setup_database();
+            $existing_cols = $wpdb->get_col("SHOW COLUMNS FROM `{$table_name}`");
+        }
+
         if ($is_edit) {
             $old_product = $wpdb->get_row($wpdb->prepare("SELECT image_url, poster_image_url FROM `{$table_name}` WHERE id = %d", $edit_id), ARRAY_A);
 
             $update_data = array(
-                'name' => $product_name,
-                'description' => $product_description,
-                'price' => $product_price,
-                'price_suffix' => $product_price_suffix,
-                'image_url' => $final_image_url,
-                'url' => $product_url,
-                'category' => $product_category,
-                'badge_tag' => $product_badge_tag,
-                'cta_text' => $product_cta_text,
-                'brand' => $product_brand,
-                'custom_brand' => $product_custom_brand,
-                'brand_logo' => $product_brand_logo,
-                'is_new' => $product_is_new,
-                'is_poster' => $product_is_poster,
-                'poster_image_url' => $final_poster_image_url,
+                'name' => (string) $product_name,
+                'description' => (string) $product_description,
+                'price' => (string) $product_price,
+                'price_suffix' => (string) $product_price_suffix,
+                'image_url' => (string) $final_image_url,
+                'url' => (string) $product_url,
+                'category' => (string) $product_category,
+                'badge_tag' => (string) $product_badge_tag,
+                'cta_text' => (string) $product_cta_text,
+                'brand' => (string) $product_brand,
+                'custom_brand' => (string) $product_custom_brand,
+                'brand_logo' => (string) $product_brand_logo,
+                'is_new' => (int) $product_is_new,
+                'is_poster' => (int) $product_is_poster,
+                'poster_image_url' => (string) $final_poster_image_url,
             );
+
+            // 过滤掉当前物理表中不存在的字段，杜绝 Unknown column 错误
+            $update_data = array_intersect_key($update_data, array_flip($existing_cols));
 
             $result = $wpdb->update($table_name, $update_data, array('id' => $edit_id));
 
@@ -551,7 +563,8 @@ function goods_exhibition_handle_product_form_action()
                 goods_exhibition_flush_cache();
                 goods_exhibition_admin_redirect('updated');
             } else {
-                goods_exhibition_admin_notice('error', '更新产品失败，请重试。');
+                $error_detail = !empty($wpdb->last_error) ? ' (' . esc_html($wpdb->last_error) . ')' : '';
+                goods_exhibition_admin_notice('error', '更新产品失败，请重试。' . $error_detail);
             }
         } else {
             // 获取当前分类的最大排序值
@@ -561,23 +574,26 @@ function goods_exhibition_handle_product_form_action()
             ));
 
             $insert_data = array(
-                'name' => $product_name,
-                'description' => $product_description,
-                'price' => $product_price,
-                'price_suffix' => $product_price_suffix,
-                'image_url' => $final_image_url,
-                'url' => $product_url,
-                'category' => $product_category,
-                'badge_tag' => $product_badge_tag,
-                'cta_text' => $product_cta_text,
-                'brand' => $product_brand,
-                'custom_brand' => $product_custom_brand,
-                'brand_logo' => $product_brand_logo,
-                'is_new' => $product_is_new,
-                'is_poster' => $product_is_poster,
-                'poster_image_url' => $final_poster_image_url,
+                'name' => (string) $product_name,
+                'description' => (string) $product_description,
+                'price' => (string) $product_price,
+                'price_suffix' => (string) $product_price_suffix,
+                'image_url' => (string) $final_image_url,
+                'url' => (string) $product_url,
+                'category' => (string) $product_category,
+                'badge_tag' => (string) $product_badge_tag,
+                'cta_text' => (string) $product_cta_text,
+                'brand' => (string) $product_brand,
+                'custom_brand' => (string) $product_custom_brand,
+                'brand_logo' => (string) $product_brand_logo,
+                'is_new' => (int) $product_is_new,
+                'is_poster' => (int) $product_is_poster,
+                'poster_image_url' => (string) $final_poster_image_url,
                 'sort_order' => $max_sort + 1,
             );
+
+            // 过滤掉当前物理表中不存在的字段，杜绝 Unknown column 错误
+            $insert_data = array_intersect_key($insert_data, array_flip($existing_cols));
 
             $result = $wpdb->insert($table_name, $insert_data);
 
@@ -587,7 +603,8 @@ function goods_exhibition_handle_product_form_action()
                 // 成功后跳转到产品列表页（保留当前分类筛选与上下文）
                 goods_exhibition_admin_redirect('added', array('new_id' => $new_id));
             } else {
-                goods_exhibition_admin_notice('error', '添加产品失败，请重试。');
+                $error_detail = !empty($wpdb->last_error) ? ' (' . esc_html($wpdb->last_error) . ')' : '';
+                goods_exhibition_admin_notice('error', '添加产品失败，请重试。' . $error_detail);
             }
         }
     } else {
@@ -987,7 +1004,7 @@ function goods_exhibition_render_product_list_tab()
                 <input type="hidden" name="_redirect_s" value="<?php echo esc_attr($search); ?>">
 
                 <div class="ge-table-card">
-                    <table class="ge-table goods-exhibition-table" <?php echo $is_category_filtered ? 'data-sortable="1"' : ''; ?>>
+                    <table class="ge-table goods-exhibition-table" <?php echo $is_category_filtered ? 'data-sortable="1"' : ''; ?> data-paged="<?php echo esc_attr($current_page); ?>" data-per-page="<?php echo esc_attr($per_page); ?>">
                         <thead>
                             <tr>
                                 <th class="col-cb"><input type="checkbox" id="goods-cb-select-all" class="ge-checkbox"></th>
